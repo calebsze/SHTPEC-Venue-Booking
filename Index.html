@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="zh-HK" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SHTPEC 房間預訂與即時日程系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: 600; }
+    .dark .tab-active { border-bottom: 3px solid #60a5fa; color: #60a5fa; font-weight: 600; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 antialiased min-h-screen flex flex-col transition-colors duration-200">
+
+  <!-- Header -->
+  <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm transition-colors duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-600 dark:bg-blue-500 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+            🏛️
+          </div>
+          <div>
+            <h1 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">SHTPEC 房間預訂系統</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Professional Room & Equipment Booking Center</p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <!-- Dark Mode Toggle Button -->
+          <button onclick="toggleDarkMode()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-semibold transition flex items-center space-x-1.5" title="切換深色/淺色模式">
+            <span id="themeIcon">🌙</span>
+            <span id="themeLabel" class="hidden sm:inline text-xs">深色模式</span>
+          </button>
+
+          <div id="connectionStatus" class="hidden sm:flex items-center space-x-2 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800 font-medium">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>系統正常 / Online</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Navigation -->
+      <nav class="flex space-x-8 text-sm overflow-x-auto no-scrollbar border-t border-slate-100 dark:border-slate-700/50 pt-1">
+        <button onclick="switchTab('bookingTab')" id="nav-bookingTab" class="tab-btn py-3 px-1 tab-active whitespace-nowrap flex items-center space-x-2">
+          <span>📝 預約房間與器材 / Book Room & Equipment</span>
+        </button>
+        <button onclick="switchTab('dashboardTab')" id="nav-dashboardTab" class="tab-btn py-3 px-1 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 whitespace-nowrap flex items-center space-x-2">
+          <span>📅 即時日程看板 / Live Schedule</span>
+        </button>
+        <button onclick="switchTab('adminTab')" id="nav-adminTab" class="tab-btn py-3 px-1 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 whitespace-nowrap flex items-center space-x-2">
+          <span>🔐 管理員專區 / Admin Panel</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform transition-all duration-300 translate-y-20 opacity-0 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-5 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm">
+      <span id="toastIcon">ℹ️</span>
+      <span id="toastMsg">Notification message</span>
+    </div>
+
+    <!-- TAB 1: 預約房間與器材表單 -->
+    <section id="bookingTab" class="tab-content max-w-3xl mx-auto">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-blue-700 dark:to-indigo-900 px-6 py-6 text-white">
+          <h2 class="text-xl font-bold">預約房間與器材表格 / Reservation Form</h2>
+          <p class="text-blue-100 text-xs sm:text-sm mt-1">選擇所需房間、時段與借用器材，系統將即時校驗是否有衝突。</p>
+        </div>
+
+        <form id="bookingForm" onsubmit="handleFormSubmit(event)" class="p-6 sm:p-8 space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-2">預訂日期 / Date *</label>
+              <input type="date" id="formDate" required class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-2">開始時間 / Start *</label>
+              <select id="formStartTime" required class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm"></select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-2">結束時間 / End *</label>
+              <select id="formEndTime" required class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm"></select>
+            </div>
+          </div>
+
+          <!-- 12 房間選擇 -->
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-2">預約房間 / Select Rooms (可多選) *</label>
+            <div id="roomCheckboxContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <!-- Dynamically rendered room checkboxes -->
+            </div>
+          </div>
+
+          <!-- 器材借用自訂與選擇 (NEW) -->
+          <div class="p-4 rounded-xl bg-indigo-50/60 dark:bg-slate-900/60 border border-indigo-100 dark:border-indigo-900/40 space-y-4">
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-bold text-indigo-900 dark:text-indigo-300 uppercase tracking-wider">借用器材選擇 / Equipment Borrowing (可多選與自訂)</label>
+              <span class="text-[11px] text-indigo-600 dark:text-indigo-400">音響 / 電腦 / 燈光 / 直播</span>
+            </div>
+
+            <div id="equipmentCheckboxContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+              <!-- Dynamically rendered equipment checkboxes -->
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">自訂其他器材 / Custom Equipment (選填)</label>
+              <input type="text" id="formCustomEquipment" placeholder="例如：HDMI轉接頭、延長線 2 條、簡報筆" class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 text-sm">
+            </div>
+          </div>
+
+          <div class="p-4 rounded-xl bg-blue-50/60 dark:bg-slate-900/50 border border-blue-100 dark:border-slate-700 space-y-4">
+            <h3 class="text-xs font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wider">預約者資訊 / Booker Details</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">預約者名稱 / Booker Name *</label>
+                <input type="text" id="formBookerName" placeholder="例如：陳大文 (David Chan)" required class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">聯絡電話 / Contact Phone *</label>
+                <input type="tel" id="formPhone" placeholder="例如：98765432" required class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm">
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-2">部門 / Department</label>
+              <select id="formDepartment" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm"></select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-2">活動名稱 / Activity Name *</label>
+              <input type="text" id="formActivity" placeholder="例如：週例會、團契活動" required class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-2">備註 / Notes</label>
+            <textarea id="formNotes" rows="2" placeholder="特殊安排或其他說明..." class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm"></textarea>
+          </div>
+
+          <div class="pt-2">
+            <button type="submit" id="submitBtn" class="w-full sm:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-sm transition duration-150 flex items-center justify-center space-x-2">
+              <span>確認提交預訂 / Submit Booking</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 2: 即時預訂看板 (月 / 週 / 日 / Schedule 檢視) -->
+    <section id="dashboardTab" class="tab-content hidden space-y-6">
+      
+      <!-- 控制列: 模式切換與日期導航 -->
+      <div class="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 transition-colors">
+        
+        <!-- View Mode Switcher -->
+        <div class="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-700 self-start md:self-auto">
+          <button onclick="setDashboardViewMode('day')" id="viewMode-day" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 dark:text-slate-300">
+            ⏱️ 日 (Day)
+          </button>
+          <button onclick="setDashboardViewMode('week')" id="viewMode-week" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 dark:text-slate-300">
+            🗓️ 週 (Week)
+          </button>
+          <button onclick="setDashboardViewMode('month')" id="viewMode-month" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 dark:text-slate-300">
+            📅 月 (Month)
+          </button>
+          <button onclick="setDashboardViewMode('schedule')" id="viewMode-schedule" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 dark:text-slate-300">
+            📋 Schedule 列表
+          </button>
+        </div>
+
+        <!-- Date Controls & Navigation -->
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex items-center space-x-1">
+            <button onclick="navigateDashboardDate(-1)" class="p-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold transition">◀</button>
+            <input type="date" id="dashDate" onchange="loadScheduleDashboard()" class="px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm font-medium">
+            <button onclick="navigateDashboardDate(1)" class="p-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold transition">▶</button>
+          </div>
+          <button onclick="setDashToday()" class="px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold transition">今日 (Today)</button>
+          <button onclick="loadScheduleDashboard()" class="px-3.5 py-2 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 rounded-lg text-xs font-semibold transition flex items-center space-x-1">
+            <span>🔄 刷新</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- View Container -->
+      <div id="scheduleViewContainer" class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
+        <!-- Rendered dynamically depending on active view mode -->
+      </div>
+    </section>
+
+    <!-- TAB 3: 專業管理員專區 (RBAC) -->
+    <section id="adminTab" class="tab-content hidden space-y-6">
+      <!-- 登入卡片 -->
+      <div id="adminLoginCard" class="max-w-md mx-auto bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+        <div class="text-center">
+          <div class="w-12 h-12 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl mx-auto flex items-center justify-center text-xl mb-3">
+            🔐
+          </div>
+          <h2 class="text-xl font-bold text-slate-900 dark:text-white">管理員登入 / Admin Sign In</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">請輸入憑證存取系統後台 console</p>
+        </div>
+
+        <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">帳號 / Username</label>
+            <input type="text" id="adminUser" placeholder="admin" required class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">密碼 / Password</label>
+            <input type="password" id="adminPass" required class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm">
+          </div>
+          <button type="submit" id="adminLoginBtn" class="w-full py-3 bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white font-semibold rounded-xl transition text-sm">
+            登入管理後台 / Sign In
+          </button>
+        </form>
+      </div>
+
+      <!-- 已登入後台面板 -->
+      <div id="adminPanelArea" class="hidden space-y-6">
+        
+        <!-- 管理員資訊與功能頂欄 -->
+        <div class="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div>
+            <div class="flex items-center space-x-2">
+              <h2 class="text-lg font-bold text-slate-900 dark:text-white">專業管理 Console</h2>
+              <span id="userRoleBadge" class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300">ROLE</span>
+            </div>
+            <p id="userInfoText" class="text-xs text-slate-500 dark:text-slate-400 mt-1">已登入用戶: -</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="exportBookingsCSV()" class="px-3 py-2 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 rounded-lg text-xs font-semibold transition flex items-center space-x-1">
+              <span>📥 匯出 CSV 紀錄</span>
+            </button>
+            <button onclick="openChangePasswordModal()" class="px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg text-xs font-semibold transition">
+              🔑 修改個人密碼
+            </button>
+            <button onclick="adminLogout()" class="px-3 py-2 bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 rounded-lg text-xs font-semibold transition">
+              🚪 登出
+            </button>
+          </div>
+        </div>
+
+        <!-- 數據統計儀表板卡片 Summary Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div class="text-xs font-medium text-slate-500 dark:text-slate-400">總預約數</div>
+            <div id="statTotalBookings" class="text-2xl font-bold text-slate-900 dark:text-white mt-1">0</div>
+          </div>
+          <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div class="text-xs font-medium text-slate-500 dark:text-slate-400">今日預約</div>
+            <div id="statTodayBookings" class="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">0</div>
+          </div>
+          <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div class="text-xs font-medium text-slate-500 dark:text-slate-400">本月預約</div>
+            <div id="statMonthBookings" class="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">0</div>
+          </div>
+          <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div class="text-xs font-medium text-slate-500 dark:text-slate-400">系統房間數</div>
+            <div id="statTotalRooms" class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">12</div>
+          </div>
+        </div>
+
+        <!-- 子頁籤導航 -->
+        <div class="flex border-b border-slate-200 dark:border-slate-700 space-x-6 text-sm font-medium">
+          <button onclick="switchAdminSubTab('subTabBookings')" id="nav-subTabBookings" class="py-2 border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 font-bold">
+            📅 行程與預約管理
+          </button>
+          <button onclick="switchAdminSubTab('subTabUsers')" id="nav-subTabUsers" class="py-2 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
+            👥 帳號權限管理 (超級管理員)
+          </button>
+        </div>
+
+        <!-- SUB-TAB 1: 行程與預約管理 -->
+        <div id="subTabBookings" class="space-y-4">
+          <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center space-x-2 flex-1 w-full sm:w-auto">
+              <span class="text-slate-400 text-sm">🔍</span>
+              <input type="text" id="adminSearch" oninput="filterAdminTable()" placeholder="搜尋活動、預約者、電話、器材或部門..." class="w-full bg-transparent outline-none text-sm text-slate-700 dark:text-slate-200">
+            </div>
+            <div class="flex items-center space-x-2 self-end sm:self-auto">
+              <button onclick="fetchAdminBookings()" class="px-3.5 py-2 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 rounded-lg text-xs font-semibold transition whitespace-nowrap">
+                🔄 刷新清單
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 text-sm text-left">
+              <thead class="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 text-xs uppercase font-bold tracking-wider">
+                <tr>
+                  <th class="py-3 px-4">日期 / 時段</th>
+                  <th class="py-3 px-4">房間 / Rooms</th>
+                  <th class="py-3 px-4">預約者 / 電話</th>
+                  <th class="py-3 px-4">活動 / 部門</th>
+                  <th class="py-3 px-4">器材需求與備註</th>
+                  <th class="py-3 px-4 text-center">操作與管理</th>
+                </tr>
+              </thead>
+              <tbody id="adminTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/60"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SUB-TAB 2: 帳號與權限管理 (SUPER_ADMIN ONLY) -->
+        <div id="subTabUsers" class="hidden space-y-6">
+          <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+            <h3 class="text-md font-bold text-slate-900 dark:text-white">新增用戶帳號 / Create New User</h3>
+            <form onsubmit="handleCreateUser(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">帳號 (Username) *</label>
+                <input type="text" id="newUsername" required placeholder="例如：john" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">密碼 (Password) *</label>
+                <input type="password" id="newPassword" required placeholder="****" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">顯示姓名 (Display Name) *</label>
+                <input type="text" id="newDisplayName" required placeholder="例如：John Doe" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">指定角色 (Assign Role) *</label>
+                <select id="newRole" required class="w-full px-3 py-2 bg-white dark:bg-slate-900 border dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100">
+                  <option value="SUPER_ADMIN">👑 超級管理員 (Super Admin)</option>
+                  <option value="ADMIN" selected>🛠️ 普通管理員 (General Admin)</option>
+                  <option value="EDITOR">✏️ 行程編輯者 (Schedule Editor)</option>
+                </select>
+              </div>
+              <div class="sm:col-span-4 flex justify-end">
+                <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-xs shadow-sm">
+                  ➕ 建立帳號
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 text-sm text-left">
+              <thead class="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 text-xs uppercase font-bold tracking-wider">
+                <tr>
+                  <th class="py-3 px-4">帳號 (Username)</th>
+                  <th class="py-3 px-4">顯示姓名 (Display Name)</th>
+                  <th class="py-3 px-4">角色權限 (Role)</th>
+                  <th class="py-3 px-4 text-center">管理與操作</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/60"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 編輯預訂行程 Modal (NEW) -->
+  <div id="editBookingModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-xl border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto no-scrollbar">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">✏️ 編輯預約行程資料</h3>
+        <button onclick="closeEditBookingModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold">✕</button>
+      </div>
+
+      <form onsubmit="handleSaveBookingEdit(event)" class="space-y-4 text-sm">
+        <input type="hidden" id="editRowIndex">
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">日期 *</label>
+            <input type="date" id="editDate" required class="w-full px-3 py-2 border dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">開始時間 *</label>
+            <select id="editStartTime" required class="w-full px-3 py-2 border dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">結束時間 *</label>
+            <select id="editEndTime" required class="w-full px-3 py-2 border dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"></select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">預約房間 *</label>
+          <div id="editRoomContainer" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">預約者姓名 *</label>
+            <input type="text" id="editBookerName" required class="w-full px-3 py-2 border dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">聯絡電話 *</label>
+            <input type="tel" id="editPhone" required class="w-full px-3 py-2 border dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">部門</label>
+            <select id="editDepartment" class="w-full px-3 py-2 border dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">活動名稱 *</label>
+            <input type="text" id="editActivity" required class="w-full px-3 py-2 border dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">備註 / 器材需求</label>
+          <textarea id="editNotes" rows="2" class="w-full px-3 py-2 border dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"></textarea>
+        </div>
+
+        <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+          <button type="button" onclick="closeEditBookingModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold">取消</button>
+          <button type="submit" id="saveEditBtn" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm">儲存變更</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 修改個人密碼 Modal -->
+  <div id="changePassModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-xl border border-slate-200 dark:border-slate-700">
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white">修改個人密碼</h3>
+      <form onsubmit="handleChangeOwnPassword(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">目前密碼</label>
+          <input type="password" id="myCurrentPass" required class="w-full px-3 py-2 border dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">新密碼</label>
+          <input type="password" id="myNewPass" required minlength="4" class="w-full px-3 py-2 border dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+        </div>
+        <div class="flex justify-end space-x-2 pt-2">
+          <button type="button" onclick="closeChangePasswordModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold">取消</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold">確認修改</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let systemRooms = [];
+    let systemEquipment = [];
+    let systemDepartments = [];
+    let timeSlots = [];
+    let currentAdminAuth = null;
+    let allAdminRecords = [];
+    let currentDashboardView = 'day';
+
+    const ROLE_LABELS = {
+      SUPER_ADMIN: "👑 超級管理員",
+      ADMIN: "🛠️ 普通管理員",
+      EDITOR: "✏️ 行程編輯者"
+    };
+
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+        document.getElementById('themeIcon').textContent = '☀️';
+        document.getElementById('themeLabel').textContent = '淺色模式';
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.getElementById('themeIcon').textContent = '🌙';
+        document.getElementById('themeLabel').textContent = '深色模式';
+      }
+    }
+
+    function toggleDarkMode() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      document.getElementById('themeIcon').textContent = isDark ? '☀️' : '🌙';
+      document.getElementById('themeLabel').textContent = isDark ? '淺色模式' : '深色模式';
+    }
+
+    function initTimeSlots() {
+      const times = [];
+      for (let h = 8; h <= 21; h++) {
+        const hh = h < 10 ? "0" + h : "" + h;
+        times.push(hh + ":00");
+        times.push(hh + ":30");
+      }
+      times.push("22:00");
+      timeSlots = times;
+
+      const startSelect = document.getElementById("formStartTime");
+      const endSelect = document.getElementById("formEndTime");
+      const editStartSelect = document.getElementById("editStartTime");
+      const editEndSelect = document.getElementById("editEndTime");
+
+      startSelect.innerHTML = "";
+      endSelect.innerHTML = "";
+      editStartSelect.innerHTML = "";
+      editEndSelect.innerHTML = "";
+      
+      times.forEach((t, idx) => {
+        if (idx < times.length - 1) {
+          startSelect.add(new Option(t, t));
+          editStartSelect.add(new Option(t, t));
+        }
+        if (idx > 0) {
+          endSelect.add(new Option(t, t));
+          editEndSelect.add(new Option(t, t));
+        }
+      });
+      startSelect.value = "09:00";
+      endSelect.value = "10:00";
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      initTheme();
+      initTimeSlots();
+      setTodayDates();
+      loadMetadata();
+      setDashboardViewMode('day');
+    });
+
+    function setTodayDates() {
+      const today = new Date().toISOString().split("T")[0];
+      document.getElementById("formDate").value = today;
+      document.getElementById("dashDate").value = today;
+    }
+
+    function setDashToday() {
+      setTodayDates();
+      loadScheduleDashboard();
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+      document.querySelectorAll(".tab-btn").forEach(el => {
+        el.classList.remove("tab-active", "text-blue-600", "dark:text-blue-400");
+        el.classList.add("text-slate-500", "dark:text-slate-400");
+      });
+
+      document.getElementById(tabId).classList.remove("hidden");
+      const activeNav = document.getElementById("nav-" + tabId);
+      activeNav.classList.add("tab-active", "text-blue-600", "dark:text-blue-400");
+      activeNav.classList.remove("text-slate-500", "dark:text-slate-400");
+
+      if (tabId === "dashboardTab") loadScheduleDashboard();
+    }
+
+    function loadMetadata() {
+      google.script.run
+        .withSuccessHandler(data => {
+          systemRooms = data.rooms;
+          systemEquipment = data.equipment;
+          systemDepartments = data.departments;
+
+          renderRoomCheckboxes(data.rooms);
+          renderEquipmentCheckboxes(data.equipment);
+
+          const deptSelect = document.getElementById("formDepartment");
+          const editDeptSelect = document.getElementById("editDepartment");
+          deptSelect.innerHTML = "";
+          editDeptSelect.innerHTML = "";
+          data.departments.forEach(dept => {
+            deptSelect.add(new Option(dept, dept));
+            editDeptSelect.add(new Option(dept, dept));
+          });
+        })
+        .getSystemMeta();
+    }
+
+    function renderRoomCheckboxes(rooms) {
+      const container = document.getElementById("roomCheckboxContainer");
+      container.innerHTML = "";
+      rooms.forEach(r => {
+        const label = document.createElement("label");
+        label.className = "flex items-center space-x-2.5 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer text-xs sm:text-sm font-medium transition text-slate-800 dark:text-slate-200";
+        label.innerHTML = `
+          <input type="checkbox" name="selectedRooms" value="${escapeHtml(r)}" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-slate-300 dark:border-slate-600">
+          <span class="truncate">${escapeHtml(r)}</span>
+        `;
+        container.appendChild(label);
+      });
+    }
+
+    function renderEquipmentCheckboxes(equipment) {
+      const container = document.getElementById("equipmentCheckboxContainer");
+      container.innerHTML = "";
+      equipment.forEach(eq => {
+        const label = document.createElement("label");
+        label.className = "flex items-center space-x-2 p-2 rounded-lg border border-indigo-100 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-50/50 dark:hover:bg-slate-800 cursor-pointer text-xs font-medium transition text-slate-800 dark:text-slate-200";
+        label.innerHTML = `
+          <input type="checkbox" name="selectedEquipment" value="${escapeHtml(eq)}" onchange="handleEquipmentCheck(this)" class="w-3.5 h-3.5 text-indigo-600 rounded focus:ring-indigo-500 border-slate-300 dark:border-slate-600">
+          <span class="truncate">${escapeHtml(eq)}</span>
+        `;
+        container.appendChild(label);
+      });
+    }
+
+    function handleEquipmentCheck(changedCb) {
+      if (changedCb.value.includes("毋須任何") && changedCb.checked) {
+        document.querySelectorAll('input[name="selectedEquipment"]').forEach(cb => {
+          if (cb !== changedCb) cb.checked = false;
+        });
+      } else if (changedCb.checked) {
+        document.querySelectorAll('input[name="selectedEquipment"]').forEach(cb => {
+          if (cb.value.includes("毋須任何")) cb.checked = false;
+        });
+      }
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const submitBtn = document.getElementById("submitBtn");
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = "<span>⏳ 處理中...</span>";
+
+      const roomCbs = document.querySelectorAll('input[name="selectedRooms"]:checked');
+      const selectedRooms = Array.from(roomCbs).map(cb => cb.value);
+
+      if (selectedRooms.length === 0) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = "<span>確認提交預訂 / Submit Booking</span>";
+        showToast("⚠️ 請至少勾選一個預訂房間！", true);
+        return;
+      }
+
+      const eqCbs = document.querySelectorAll('input[name="selectedEquipment"]:checked');
+      const selectedEquipment = Array.from(eqCbs).map(cb => cb.value);
+
+      const payload = {
+        date: document.getElementById("formDate").value,
+        startTime: document.getElementById("formStartTime").value,
+        endTime: document.getElementById("formEndTime").value,
+        selectedRooms: selectedRooms,
+        selectedEquipment: selectedEquipment,
+        customEquipment: document.getElementById("formCustomEquipment").value.trim(),
+        bookerName: document.getElementById("formBookerName").value.trim(),
+        phone: document.getElementById("formPhone").value.trim(),
+        department: document.getElementById("formDepartment").value,
+        activity: document.getElementById("formActivity").value.trim(),
+        notes: document.getElementById("formNotes").value.trim()
+      };
+
+      google.script.run
+        .withSuccessHandler(res => {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = "<span>確認提交預訂 / Submit Booking</span>";
+          
+          if (res.success) {
+            showToast("✅ " + res.message);
+            document.getElementById("bookingForm").reset();
+            setTodayDates();
+            switchTab("dashboardTab");
+          } else {
+            showToast("⚠️ " + res.message, true);
+          }
+        })
+        .withFailureHandler(err => {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = "<span>確認提交預訂 / Submit Booking</span>";
+          showToast("❌ 錯誤: " + err.message, true);
+        })
+        .submitBooking(payload);
+    }
+
+    // --- DASHBOARD MULTI-VIEW LOGIC ---
+
+    function setDashboardViewMode(mode) {
+      currentDashboardView = mode;
+      ['day', 'week', 'month', 'schedule'].forEach(m => {
+        const btn = document.getElementById('viewMode-' + m);
+        if (m === mode) {
+          btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm";
+        } else {
+          btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200";
+        }
+      });
+      loadScheduleDashboard();
+    }
+
+    function navigateDashboardDate(offset) {
+      const dateInput = document.getElementById("dashDate");
+      const current = new Date(dateInput.value || new Date());
+      if (currentDashboardView === 'month') {
+        current.setMonth(current.getMonth() + offset);
+      } else if (currentDashboardView === 'week') {
+        current.setDate(current.getDate() + (offset * 7));
+      } else {
+        current.setDate(current.getDate() + offset);
+      }
+      dateInput.value = current.toISOString().split("T")[0];
+      loadScheduleDashboard();
+    }
+
+    function loadScheduleDashboard() {
+      const container = document.getElementById("scheduleViewContainer");
+      const dateStr = document.getElementById("dashDate").value || new Date().toISOString().split("T")[0];
+      const baseDate = new Date(dateStr);
+
+      container.innerHTML = `<div class="p-8 text-center text-slate-400">載入即時日程中...</div>`;
+
+      if (currentDashboardView === 'day') {
+        google.script.run
+          .withSuccessHandler(bookings => renderDayViewGrid(bookings, systemRooms))
+          .withFailureHandler(err => container.innerHTML = `<div class="p-8 text-center text-rose-500">載入失敗: ${err.message}</div>`)
+          .getScheduleByDate(dateStr);
+      } 
+      else if (currentDashboardView === 'week') {
+        const startOfWeek = new Date(baseDate);
+        const day = startOfWeek.getDay();
+        const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+        startOfWeek.setDate(diff);
+
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(endOfWeek.getDate() + 6);
+
+        google.script.run
+          .withSuccessHandler(bookings => renderWeekView(bookings, startOfWeek))
+          .withFailureHandler(err => container.innerHTML = `<div class="p-8 text-center text-rose-500">載入失敗: ${err.message}</div>`)
+          .getScheduleByDateRange(startOfWeek.toISOString().split("T")[0], endOfWeek.toISOString().split("T")[0]);
+      } 
+      else if (currentDashboardView === 'month') {
+        const year = baseDate.getFullYear();
+        const month = baseDate.getMonth();
+        const startOfMonth = new Date(year, month, 1);
+        const endOfMonth = new Date(year, month + 1, 0);
+
+        google.script.run
+          .withSuccessHandler(bookings => renderMonthView(bookings, year, month))
+          .withFailureHandler(err => container.innerHTML = `<div class="p-8 text-center text-rose-500">載入失敗: ${err.message}</div>`)
+          .getScheduleByDateRange(startOfMonth.toISOString().split("T")[0], endOfMonth.toISOString().split("T")[0]);
+      } 
+      else if (currentDashboardView === 'schedule') {
+        const start = new Date(baseDate);
+        start.setDate(start.getDate() - 7);
+        const end = new Date(baseDate);
+        end.setDate(end.getDate() + 30);
+
+        google.script.run
+          .withSuccessHandler(bookings => renderAgendaScheduleView(bookings))
+          .withFailureHandler(err => container.innerHTML = `<div class="p-8 text-center text-rose-500">載入失敗: ${err.message}</div>`)
+          .getScheduleByDateRange(start.toISOString().split("T")[0], end.toISOString().split("T")[0]);
+      }
+    }
+
+    // 1. DAY VIEW
+    function renderDayViewGrid(bookings, rooms) {
+      const container = document.getElementById("scheduleViewContainer");
+      if (!rooms || rooms.length === 0) rooms = systemRooms;
+
+      let html = `
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 text-xs text-left">
+            <thead class="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 font-bold uppercase tracking-wider">
+              <tr>
+                <th class="py-3 px-3 w-24 sticky left-0 bg-slate-100 dark:bg-slate-900 z-10 border-r border-slate-200 dark:border-slate-700">時間 / Time</th>
+                ${rooms.map(r => `<th class="py-3 px-3 text-center min-w-[120px] border-r border-slate-100 dark:border-slate-700">${escapeHtml(r)}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-700/60">
+      `;
+
+      for (let i = 0; i < timeSlots.length - 1; i++) {
+        const slotStart = timeSlots[i];
+        const slotEnd = timeSlots[i + 1];
+
+        html += `<tr class="hover:bg-slate-50/70 dark:hover:bg-slate-700/40 transition">`;
+        html += `<td class="py-2 px-3 font-medium text-slate-500 dark:text-slate-400 bg-slate-50/60 dark:bg-slate-900/60 sticky left-0 border-r border-slate-200 dark:border-slate-700">${slotStart} - ${slotEnd}</td>`;
+
+        rooms.forEach(r => {
+          const matched = bookings.find(b => b.bookedRooms.includes(r) && b.startTime <= slotStart && b.endTime >= slotEnd);
+
+          if (matched) {
+            html += `
+              <td class="p-1.5 text-center border-r border-slate-100 dark:border-slate-700">
+                <div class="bg-blue-600 dark:bg-blue-600 text-white rounded-lg p-1.5 text-[11px] font-medium shadow-sm leading-tight">
+                  <div class="font-bold truncate">${escapeHtml(matched.activity)}</div>
+                  <div class="text-[10px] text-blue-100 truncate">${escapeHtml(matched.department)} | ${escapeHtml(matched.bookerName)}</div>
+                </div>
+              </td>
+            `;
+          } else {
+            html += `
+              <td class="p-1 text-center border-r border-slate-100 dark:border-slate-700">
+                <div class="text-emerald-600 dark:text-emerald-400 bg-emerald-50/60 dark:bg-emerald-950/40 rounded border border-emerald-100 dark:border-emerald-900/40 py-1 text-[10px]">可用</div>
+              </td>
+            `;
+          }
+        });
+        html += `</tr>`;
+      }
+
+      html += `</tbody></table></div>`;
+      container.innerHTML = html;
+    }
+
+    // 2. WEEK VIEW
+    function renderWeekView(bookings, startOfWeek) {
+      const container = document.getElementById("scheduleViewContainer");
+      const weekDays = [];
+      const daysCN = ["週一", "週二", "週三", "週四", "週五", "週六", "週日"];
+
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(startOfWeek);
+        d.setDate(d.getDate() + i);
+        weekDays.push(d);
+      }
+
+      let html = `<div class="grid grid-cols-1 md:grid-cols-7 divide-y md:divide-y-0 md:divide-x divide-slate-200 dark:divide-slate-700">`;
+
+      weekDays.forEach((d, idx) => {
+        const dateStr = d.toISOString().split("T")[0];
+        const dayBookings = bookings.filter(b => b.date === dateStr);
+
+        html += `
+          <div class="p-3 min-h-[300px] flex flex-col">
+            <div class="text-center pb-2 border-b border-slate-100 dark:border-slate-700 mb-3">
+              <div class="text-xs font-bold text-slate-500 dark:text-slate-400">${daysCN[idx]}</div>
+              <div class="text-sm font-bold text-slate-800 dark:text-slate-200">${d.getMonth()+1}/${d.getDate()}</div>
+            </div>
+            <div class="flex-1 space-y-2">
+        `;
+
+        if (dayBookings.length === 0) {
+          html += `<div class="text-center py-6 text-xs text-slate-400">無預約</div>`;
+        } else {
+          dayBookings.forEach(b => {
+            html += `
+              <div class="p-2 bg-blue-50 dark:bg-slate-900/80 border border-blue-200 dark:border-blue-900 rounded-xl text-xs space-y-1">
+                <div class="font-bold text-blue-900 dark:text-blue-300 truncate">${escapeHtml(b.activity)}</div>
+                <div class="text-[11px] text-slate-600 dark:text-slate-400">🕒 ${b.startTime} - ${b.endTime}</div>
+                <div class="flex flex-wrap gap-1 pt-1">
+                  ${b.bookedRooms.map(r => `<span class="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-[10px]">${escapeHtml(r)}</span>`).join('')}
+                </div>
+              </div>
+            `;
+          });
+        }
+        html += `</div></div>`;
+      });
+
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    // 3. MONTH VIEW
+    function renderMonthView(bookings, year, month) {
+      const container = document.getElementById("scheduleViewContainer");
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      
+      const startDayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+      const totalDays = lastDay.getDate();
+
+      let html = `
+        <div class="p-4 bg-slate-50 dark:bg-slate-900 font-bold text-center border-b border-slate-200 dark:border-slate-700 text-sm">
+          ${year} 年 ${month + 1} 月
+        </div>
+        <div class="grid grid-cols-7 text-center text-xs font-bold bg-slate-100 dark:bg-slate-900 text-slate-500 py-2 border-b border-slate-200 dark:border-slate-700">
+          <div>週一</div><div>週二</div><div>週三</div><div>週四</div><div>週五</div><div>週六</div><div>週日</div>
+        </div>
+        <div class="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-slate-200 dark:divide-slate-700">
+      `;
+
+      for (let i = 0; i < startDayOfWeek; i++) {
+        html += `<div class="bg-slate-50/40 dark:bg-slate-900/40 min-h-[90px]"></div>`;
+      }
+
+      for (let day = 1; day <= totalDays; day++) {
+        const currentDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayBookings = bookings.filter(b => b.date === currentDateStr);
+
+        html += `
+          <div class="p-1.5 min-h-[90px] bg-white dark:bg-slate-800 flex flex-col justify-between hover:bg-slate-50 dark:hover:bg-slate-750 transition">
+            <div class="text-right text-xs font-semibold text-slate-700 dark:text-slate-300">${day}</div>
+            <div class="space-y-1 overflow-y-auto max-h-16 no-scrollbar">
+        `;
+
+        dayBookings.forEach(b => {
+          html += `
+            <div class="bg-blue-100 dark:bg-blue-900/60 text-blue-900 dark:text-blue-200 text-[10px] px-1.5 py-0.5 rounded truncate font-medium" title="${escapeHtml(b.activity)} (${b.startTime}-${b.endTime})">
+              ${b.startTime} ${escapeHtml(b.activity)}
+            </div>
+          `;
+        });
+
+        html += `</div></div>`;
+      }
+
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    // 4. SCHEDULE / AGENDA VIEW
+    function renderAgendaScheduleView(bookings) {
+      const container = document.getElementById("scheduleViewContainer");
+      if (bookings.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center text-slate-400">期間內無任何預約活動</div>`;
+        return;
+      }
+
+      bookings.sort((a,b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
+
+      let html = `<div class="divide-y divide-slate-200 dark:divide-slate-700">`;
+      bookings.forEach(b => {
+        html += `
+          <div class="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-750 transition">
+            <div class="space-y-1">
+              <div class="flex items-center space-x-2">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">${b.date}</span>
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">🕒 ${b.startTime} - ${b.endTime}</span>
+              </div>
+              <h4 class="text-sm font-bold text-slate-900 dark:text-white">${escapeHtml(b.activity)}</h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400">部門: ${escapeHtml(b.department)} | 預約人: ${escapeHtml(b.bookerName)} (${escapeHtml(b.phone)})</p>
+              ${b.notes ? `<p class="text-xs text-indigo-600 dark:text-indigo-400 font-medium">📋 ${escapeHtml(b.notes)}</p>` : ''}
+            </div>
+            <div class="flex flex-wrap gap-1">
+              ${b.bookedRooms.map(r => `<span class="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-600">${escapeHtml(r)}</span>`).join('')}
+            </div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    // RBAC Authentication Handling
+    function handleAdminLogin(e) {
+      e.preventDefault();
+      const u = document.getElementById("adminUser").value.trim();
+      const p = document.getElementById("adminPass").value.trim();
+      const btn = document.getElementById("adminLoginBtn");
+
+      btn.disabled = true;
+      btn.textContent = "驗證中...";
+
+      google.script.run
+        .withSuccessHandler(res => {
+          btn.disabled = false;
+          btn.textContent = "登入管理後台 / Sign In";
+          if (res.success) {
+            currentAdminAuth = { u, p, displayName: res.user.displayName, role: res.user.role };
+            
+            document.getElementById("adminLoginCard").classList.add("hidden");
+            document.getElementById("adminPanelArea").classList.remove("hidden");
+            
+            document.getElementById("userInfoText").textContent = `已登入: ${res.user.displayName} (${res.user.username})`;
+            document.getElementById("userRoleBadge").textContent = ROLE_LABELS[res.user.role] || res.user.role;
+
+            const usersNavBtn = document.getElementById("nav-subTabUsers");
+            if (res.user.role === "SUPER_ADMIN") {
+              usersNavBtn.classList.remove("hidden");
+            } else {
+              usersNavBtn.classList.add("hidden");
+            }
+
+            switchAdminSubTab('subTabBookings');
+            fetchAdminBookings();
+            showToast(`🔑 登入成功，歡迎 ${res.user.displayName}`);
+          } else {
+            showToast("❌ " + res.message, true);
+          }
+        })
+        .withFailureHandler(err => {
+          btn.disabled = false;
+          btn.textContent = "登入管理後台 / Sign In";
+          showToast("❌ 驗證失敗: " + err.message, true);
+        })
+        .verifyUser(u, p);
+    }
+
+    function adminLogout() {
+      currentAdminAuth = null;
+      document.getElementById("adminPass").value = "";
+      document.getElementById("adminLoginCard").classList.remove("hidden");
+      document.getElementById("adminPanelArea").classList.add("hidden");
+      showToast("已成功登出管理員後台");
+    }
+
+    function switchAdminSubTab(tabId) {
+      document.getElementById("subTabBookings").classList.add("hidden");
+      document.getElementById("subTabUsers").classList.add("hidden");
+
+      document.getElementById("nav-subTabBookings").className = "py-2 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-medium";
+      document.getElementById("nav-subTabUsers").className = "py-2 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-medium";
+
+      document.getElementById(tabId).classList.remove("hidden");
+      document.getElementById("nav-" + tabId).className = "py-2 border-b-2 border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400 font-bold";
+
+      if (tabId === "subTabUsers" && currentAdminAuth && currentAdminAuth.role === "SUPER_ADMIN") {
+        fetchUsersList();
+      }
+    }
+
+    // --- BOOKING MANAGEMENT & STATS ---
+
+    function fetchAdminBookings() {
+      if (!currentAdminAuth) return;
+      const tbody = document.getElementById("adminTableBody");
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">正在讀取預約資料庫...</td></tr>`;
+
+      google.script.run
+        .withSuccessHandler(list => {
+          allAdminRecords = list;
+          updateAdminStats(list);
+          renderAdminTable(list);
+        })
+        .withFailureHandler(err => {
+          tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-rose-500">載入失敗: ${err.message}</td></tr>`;
+        })
+        .getAdminBookings(currentAdminAuth.u, currentAdminAuth.p);
+    }
+
+    function updateAdminStats(records) {
+      const todayStr = new Date().toISOString().split("T")[0];
+      const thisMonthPrefix = todayStr.substring(0, 7);
+
+      document.getElementById("statTotalBookings").textContent = records.length;
+      document.getElementById("statTodayBookings").textContent = records.filter(r => r.date === todayStr).length;
+      document.getElementById("statMonthBookings").textContent = records.filter(r => r.date && r.date.startsWith(thisMonthPrefix)).length;
+      document.getElementById("statTotalRooms").textContent = systemRooms.length || 12;
+    }
+
+    function renderAdminTable(records) {
+      const tbody = document.getElementById("adminTableBody");
+      tbody.innerHTML = "";
+
+      if (records.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">目前尚無任何預約紀錄。</td></tr>`;
+        return;
+      }
+
+      records.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 dark:hover:bg-slate-750 transition";
+
+        tr.innerHTML = `
+          <td class="py-3 px-4 whitespace-nowrap">
+            <div class="font-bold text-slate-900 dark:text-slate-100">${r.date}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400">${r.startTime} - ${r.endTime}</div>
+          </td>
+          <td class="py-3 px-4">
+            <div class="flex flex-wrap gap-1">
+              ${r.bookedRooms.map(tag => `<span class="px-2 py-0.5 rounded text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">${escapeHtml(tag)}</span>`).join("")}
+            </div>
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap">
+            <div class="font-medium text-slate-800 dark:text-slate-200">${escapeHtml(r.bookerName)}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400">📞 ${escapeHtml(r.phone)}</div>
+          </td>
+          <td class="py-3 px-4">
+            <div class="font-medium text-slate-800 dark:text-slate-200">${escapeHtml(r.activity)}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400">${escapeHtml(r.department)}</div>
+          </td>
+          <td class="py-3 px-4 text-xs text-slate-600 dark:text-slate-300 max-w-xs leading-normal">
+            ${escapeHtml(r.notes || "-")}
+          </td>
+          <td class="py-3 px-4 text-center whitespace-nowrap space-x-1.5">
+            <button onclick="openEditBookingModal(${r.rowIndex})" class="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 rounded-lg text-xs font-semibold transition">
+              編輯
+            </button>
+            <button onclick="confirmDeleteBooking(${r.rowIndex})" class="px-2.5 py-1 bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 rounded-lg text-xs font-semibold transition">
+              刪除
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterAdminTable() {
+      const q = document.getElementById("adminSearch").value.toLowerCase();
+      const filtered = allAdminRecords.filter(r => 
+        (r.activity && r.activity.toLowerCase().includes(q)) ||
+        (r.bookerName && r.bookerName.toLowerCase().includes(q)) ||
+        (r.phone && r.phone.toLowerCase().includes(q)) ||
+        (r.department && r.department.toLowerCase().includes(q)) ||
+        (r.date && r.date.toLowerCase().includes(q)) ||
+        (r.notes && r.notes.toLowerCase().includes(q))
+      );
+      renderAdminTable(filtered);
+    }
+
+    function openEditBookingModal(rowIndex) {
+      const rec = allAdminRecords.find(r => r.rowIndex === rowIndex);
+      if (!rec) return;
+
+      document.getElementById("editRowIndex").value = rowIndex;
+      document.getElementById("editDate").value = rec.date;
+      document.getElementById("editStartTime").value = rec.startTime;
+      document.getElementById("editEndTime").value = rec.endTime;
+      document.getElementById("editBookerName").value = rec.bookerName;
+      document.getElementById("editPhone").value = rec.phone;
+      document.getElementById("editDepartment").value = rec.department;
+      document.getElementById("editActivity").value = rec.activity;
+      document.getElementById("editNotes").value = rec.notes;
+
+      const roomContainer = document.getElementById("editRoomContainer");
+      roomContainer.innerHTML = "";
+      systemRooms.forEach(r => {
+        const isChecked = rec.bookedRooms.includes(r);
+        const label = document.createElement("label");
+        label.className = "flex items-center space-x-2 p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 cursor-pointer text-xs font-medium";
+        label.innerHTML = `
+          <input type="checkbox" name="editSelectedRooms" value="${escapeHtml(r)}" ${isChecked ? 'checked' : ''} class="w-3.5 h-3.5 text-blue-600 rounded">
+          <span class="truncate">${escapeHtml(r)}</span>
+        `;
+        roomContainer.appendChild(label);
+      });
+
+      document.getElementById("editBookingModal").classList.remove("hidden");
+    }
+
+    function closeEditBookingModal() {
+      document.getElementById("editBookingModal").classList.add("hidden");
+    }
+
+    function handleSaveBookingEdit(e) {
+      e.preventDefault();
+      if (!currentAdminAuth) return;
+
+      const rowIndex = parseInt(document.getElementById("editRowIndex").value, 10);
+      const roomCbs = document.querySelectorAll('input[name="editSelectedRooms"]:checked');
+      const selectedRooms = Array.from(roomCbs).map(cb => cb.value);
+
+      if (selectedRooms.length === 0) {
+        showToast("⚠️ 請至少勾選一個房間！", true);
+        return;
+      }
+
+      const saveBtn = document.getElementById("saveEditBtn");
+      saveBtn.disabled = true;
+      saveBtn.textContent = "儲存中...";
+
+      const updatedForm = {
+        date: document.getElementById("editDate").value,
+        startTime: document.getElementById("editStartTime").value,
+        endTime: document.getElementById("editEndTime").value,
+        selectedRooms: selectedRooms,
+        bookerName: document.getElementById("editBookerName").value.trim(),
+        phone: document.getElementById("editPhone").value.trim(),
+        department: document.getElementById("editDepartment").value,
+        activity: document.getElementById("editActivity").value.trim(),
+        notes: document.getElementById("editNotes").value.trim()
+      };
+
+      google.script.run
+        .withSuccessHandler(res => {
+          saveBtn.disabled = false;
+          saveBtn.textContent = "儲存變更";
+          if (res.success) {
+            showToast("✅ " + res.message);
+            closeEditBookingModal();
+            fetchAdminBookings();
+            loadScheduleDashboard();
+          } else {
+            showToast("⚠️ " + res.message, true);
+          }
+        })
+        .withFailureHandler(err => {
+          saveBtn.disabled = false;
+          saveBtn.textContent = "儲存變更";
+          showToast("❌ 錯誤: " + err.message, true);
+        })
+        .updateBooking(currentAdminAuth.u, currentAdminAuth.p, rowIndex, updatedForm);
+    }
+
+    function confirmDeleteBooking(rowIndex) {
+      if (!confirm("確定要刪除/取消此筆房間預約嗎？")) return;
+
+      google.script.run
+        .withSuccessHandler(res => {
+          if (res.success) {
+            showToast("🗑️ " + res.message);
+            fetchAdminBookings();
+            loadScheduleDashboard();
+          } else {
+            showToast("⚠️ " + res.message, true);
+          }
+        })
+        .withFailureHandler(err => {
+          showToast("❌ 錯誤: " + err.message, true);
+        })
+        .deleteBooking(currentAdminAuth.u, currentAdminAuth.p, rowIndex);
+    }
+
+    function exportBookingsCSV() {
+      if (!allAdminRecords || allAdminRecords.length === 0) {
+        showToast("⚠️ 目前沒有可供匯出的紀錄", true);
+        return;
+      }
+
+      let csv = "\uFEFFDate,Start Time,End Time,Rooms,Booker,Phone,Department,Activity,Notes\n";
+      allAdminRecords.forEach(r => {
+        const roomsStr = `"${r.bookedRooms.join("; ")}"`;
+        const notesStr = `"${(r.notes || "").replace(/"/g, '""')}"`;
+        const actStr = `"${(r.activity || "").replace(/"/g, '""')}"`;
+        const nameStr = `"${(r.bookerName || "").replace(/"/g, '""')}"`;
+        
+        csv += `${r.date},${r.startTime},${r.endTime},${roomsStr},${nameStr},${r.phone},${r.department},${actStr},${notesStr}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `SHTPEC_Booking_Export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("📥 預約紀錄 CSV 檔匯出成功！");
+    }
+
+    // --- USER MANAGEMENT (SUPER_ADMIN ONLY) ---
+
+    function fetchUsersList() {
+      if (!currentAdminAuth || currentAdminAuth.role !== "SUPER_ADMIN") return;
+      const tbody = document.getElementById("usersTableBody");
+      tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-slate-400">載入用戶清單中...</td></tr>`;
+
+      google.script.run
+        .withSuccessHandler(users => {
+          renderUsersTable(users);
+        })
+        .withFailureHandler(err => {
+          tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-rose-500">無法讀取用戶資料: ${err.message}</td></tr>`;
+        })
+        .getUsersList(currentAdminAuth.u, currentAdminAuth.p);
+    }
+
+    function renderUsersTable(users) {
+      const tbody = document.getElementById("usersTableBody");
+      tbody.innerHTML = "";
+
+      users.forEach(u => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 dark:hover:bg-slate-750 transition";
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-mono font-bold text-slate-800 dark:text-slate-200">${escapeHtml(u.username)}</td>
+          <td class="py-3 px-4 dark:text-slate-300">${escapeHtml(u.displayName)}</td>
+          <td class="py-3 px-4">
+            <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+              ${ROLE_LABELS[u.role] || u.role}
+            </span>
+          </td>
+          <td class="py-3 px-4 text-center whitespace-nowrap space-x-2">
+            <button onclick="editUserPrompt('${escapeHtml(u.username)}', '${escapeHtml(u.displayName)}', '${u.role}')" class="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 rounded-md text-xs font-medium">編輯權限與資料</button>
+            <button onclick="deleteUserPrompt('${escapeHtml(u.username)}')" class="px-2.5 py-1 bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 rounded-md text-xs font-medium">刪除</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function handleCreateUser(e) {
+      e.preventDefault();
+      if (!currentAdminAuth || currentAdminAuth.role !== "SUPER_ADMIN") return;
+
+      const newUser = {
+        username: document.getElementById("newUsername").value.trim(),
+        password: document.getElementById("newPassword").value.trim(),
+        displayName: document.getElementById("newDisplayName").value.trim(),
+        role: document.getElementById("newRole").value
+      };
+
+      google.script.run
+        .withSuccessHandler(res => {
+          if (res.success) {
+            showToast("✅ " + res.message);
+            document.getElementById("newUsername").value = "";
+            document.getElementById("newPassword").value = "";
+            document.getElementById("newDisplayName").value = "";
+            fetchUsersList();
+          } else {
+            showToast("⚠️ " + res.message, true);
+          }
+        })
+        .withFailureHandler(err => {
+          showToast("❌ 錯誤: " + err.message, true);
+        })
+        .createUser(currentAdminAuth.u, currentAdminAuth.p, newUser);
+    }
+
+    function editUserPrompt(username, currentName, currentRole) {
+      const newName = prompt(`修改用戶 [${username}] 的顯示姓名：`, currentName);
+      if (newName === null) return;
+
+      const newRole = prompt(`修改角色權限 (輸入 SUPER_ADMIN / ADMIN / EDITOR)：`, currentRole);
+      if (newRole === null) return;
+
+      const resetPass = prompt(`重設密碼 (若不需重設請留空)：`, "");
+
+      const updatePayload = {
+        displayName: newName.trim(),
+        role: newRole.trim(),
+        newPassword: resetPass ? resetPass.trim() : ""
+      };
+
+      google.script.run
+        .withSuccessHandler(res => {
+          if (res.success) {
+            showToast("✅ " + res.message);
+            fetchUsersList();
+          } else {
+            showToast("⚠️ " + res.message, true);
+          }
+        })
+        .withFailureHandler(err => {
+          showToast("❌ 錯誤: " + err.message, true);
+        })
+        .updateUser(currentAdminAuth.u, currentAdminAuth.p, username, updatePayload);
+    }
+
+    function deleteUserPrompt(username) {
+      if (!confirm(`確定要刪除帳號 [${username}] 嗎？此動作無法復原。`)) return;
+
+      google.script.run
+        .withSuccessHandler(res => {
+          if (res.success) {
+            showToast("🗑️ " + res.message);
+            fetchUsersList();
+          } else {
+            showToast("⚠️ " + res.message, true);
+          }
+        })
+        .withFailureHandler(err => {
+          showToast("❌ 錯誤: " + err.message, true);
+        })
+        .deleteUser(currentAdminAuth.u, currentAdminAuth.p, username);
+    }
+
+    // --- CHANGE OWN PASSWORD ---
+
+    function openChangePasswordModal() {
+      document.getElementById("changePassModal").classList.remove("hidden");
+    }
+
+    function closeChangePasswordModal() {
+      document.getElementById("changePassModal").classList.add("hidden");
+    }
+
+    function handleChangeOwnPassword(e) {
+      e.preventDefault();
+      if (!currentAdminAuth) return;
+
+      const curPass = document.getElementById("myCurrentPass").value;
+      const newPass = document.getElementById("myNewPass").value;
+
+      google.script.run
+        .withSuccessHandler(res => {
+          if (res.success) {
+            showToast("🔑 " + res.message);
+            currentAdminAuth.p = newPass;
+            closeChangePasswordModal();
+            document.getElementById("myCurrentPass").value = "";
+            document.getElementById("myNewPass").value = "";
+          } else {
+            showToast("⚠️ " + res.message, true);
+          }
+        })
+        .withFailureHandler(err => {
+          showToast("❌ 錯誤: " + err.message, true);
+        })
+        .changeOwnPassword(currentAdminAuth.u, curPass, newPass);
+    }
+
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById("toast");
+      const toastMsg = document.getElementById("toastMsg");
+      toastMsg.textContent = msg;
+      toast.className = `fixed bottom-5 right-5 z-50 transform transition-all duration-300 translate-y-0 opacity-100 ${isError ? 'bg-rose-900 text-white' : 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'} px-5 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm`;
+      setTimeout(() => {
+        toast.className = toast.className.replace("translate-y-0 opacity-100", "translate-y-20 opacity-0");
+      }, 4000);
+    }
+
+    function escapeHtml(string) {
+      if (!string) return "";
+      return String(string).replace(/[&<>"']/g, function(s) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s];
+      });
+    }
+  </script>
+</body>
+</html>
