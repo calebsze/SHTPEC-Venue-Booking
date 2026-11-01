@@ -61,6 +61,14 @@ function doGet() {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
+/**
+ * Fetch currently logged in Google user email address.
+ */
+function getGoogleUser() {
+  const activeUserEmail = Session.getActiveUser().getEmail() || Session.getEffectiveUser().getEmail();
+  return { email: activeUserEmail };
+}
+
 // Ensure Users sheet exists and returns initialized sheet
 function getUsersSheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -371,6 +379,76 @@ function getScheduleByDateRange(startDateStr, endDateStr) {
   return bookings;
 }
 
+// ⚠️ Sends confirmation email to form submitters - verify email parameter before running
+function sendBookingConfirmationEmail(form, selectedRooms, finalNotes) {
+  if (!form.email || !form.email.trim()) return;
+
+  const recipient = form.email.trim();
+  const subject = `【預約成功確認】SHTPEC 房間與器材預訂紀錄 - ${form.activity}`;
+
+  const htmlBody = `
+    <div style="font-family: Arial, 'Helvetica Neue', sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; background-color: #ffffff; color: #1e293b;">
+      <div style="background-color: #2563eb; padding: 16px; border-radius: 8px; text-align: center; color: #ffffff; margin-bottom: 20px;">
+        <h2 style="margin: 0; font-size: 20px;">🏛️ SHTPEC 房間與器材預訂確認</h2>
+        <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Booking Confirmation Receipt</p>
+      </div>
+
+      <p style="font-size: 15px; margin-bottom: 16px;">親愛的 <strong>${escapeHtmlServer(form.bookerName)}</strong>，您好！</p>
+      <p style="font-size: 14px; color: #475569; margin-bottom: 20px;">您的房間與器材預約已成功提交至系統，以下為您的預訂詳細資料：</p>
+
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 24px;">
+        <tr style="background-color: #f8fafc;">
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; font-weight: bold; width: 35%; color: #334155;">預訂日期 / Date</td>
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; color: #0f172a;">${escapeHtmlServer(form.date)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; font-weight: bold; color: #334155;">時段 / Timeslot</td>
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; color: #0f172a;">${escapeHtmlServer(form.startTime)} - ${escapeHtmlServer(form.endTime)}</td>
+        </tr>
+        <tr style="background-color: #f8fafc;">
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; font-weight: bold; color: #334155;">預約房間 / Selected Rooms</td>
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; color: #0f172a;">${escapeHtmlServer(selectedRooms.join(", "))}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; font-weight: bold; color: #334155;">活動名稱 / Activity</td>
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; color: #0f172a;">${escapeHtmlServer(form.activity)}</td>
+        </tr>
+        <tr style="background-color: #f8fafc;">
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; font-weight: bold; color: #334155;">部門 / Department</td>
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; color: #0f172a;">${escapeHtmlServer(form.department || "-")}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; font-weight: bold; color: #334155;">聯絡電話 / Phone</td>
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; color: #0f172a;">${escapeHtmlServer(form.phone)}</td>
+        </tr>
+        <tr style="background-color: #f8fafc;">
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; font-weight: bold; color: #334155;">器材需求與備註 / Notes</td>
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; color: #0f172a;">${escapeHtmlServer(finalNotes || "無")}</td>
+        </tr>
+      </table>
+
+      <div style="background-color: #f1f5f9; padding: 12px; border-radius: 6px; font-size: 13px; color: #64748b;">
+        📌 如需變更或取消此預訂，請聯繫系統管理員處理。
+      </div>
+
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 16px 0;">
+      <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0;">SHTPEC Room Booking System 自動發送郵件，請勿直接回覆。</p>
+    </div>
+  `;
+
+  GmailApp.sendEmail(recipient, subject, `預約成功：${form.activity}`, {
+    htmlBody: htmlBody,
+    name: "SHTPEC Room Booking System"
+  });
+}
+
+function escapeHtmlServer(string) {
+  if (!string) return "";
+  return String(string).replace(/[&<>"']/g, function(s) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s];
+  });
+}
+
 function submitBooking(form) {
   const lock = LockService.getScriptLock();
   try {
@@ -380,8 +458,8 @@ function submitBooking(form) {
     const sheet = ss.getSheetByName(SHEET_LOG);
     if (!sheet) throw new Error("找不到工作表: " + SHEET_LOG);
     
-    if (!form.date || !form.startTime || !form.endTime || !form.bookerName || !form.phone) {
-      return { success: false, message: "請填寫所有必填欄位 (日期、時間、預約者名稱、聯絡電話)。" };
+    if (!form.date || !form.startTime || !form.endTime || !form.bookerName || !form.phone || !form.email) {
+      return { success: false, message: "請填寫所有必填欄位 (日期、時間、預約者名稱、聯絡電話、電郵地址)。" };
     }
     
     const selectedRooms = form.selectedRooms || [];
@@ -443,6 +521,9 @@ function submitBooking(form) {
       finalNotes = `[器材: ${eqParts.join(" | ")}] ${finalNotes}`.trim();
     }
 
+    // Append user email to notes for reference
+    finalNotes = `[Email: ${form.email.trim()}] ${finalNotes}`.trim();
+
     const newRow = [
       form.date,
       form.startTime,
@@ -461,7 +542,15 @@ function submitBooking(form) {
     ];
     
     sheet.appendRow(newRow);
-    return { success: true, message: "房間及器材預約成功！" };
+
+    // Send confirmation email
+    try {
+      sendBookingConfirmationEmail(form, selectedRooms, finalNotes);
+    } catch (emailErr) {
+      console.error("Confirmation email failed: " + emailErr.message);
+    }
+
+    return { success: true, message: "房間及器材預約成功！確認郵件已發送至您的 Email。" };
   } catch (err) {
     return { success: false, message: "系統錯誤: " + err.message };
   } finally {

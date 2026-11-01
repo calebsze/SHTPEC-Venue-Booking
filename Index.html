@@ -93,7 +93,7 @@
       <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
         <div class="bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-blue-700 dark:to-indigo-900 px-6 py-6 text-white">
           <h2 class="text-xl font-bold">預約房間與器材表格 / Reservation Form</h2>
-          <p class="text-blue-100 text-xs sm:text-sm mt-1">選擇所需房間、時段與借用器材，系統將即時校驗是否有衝突。</p>
+          <p class="text-blue-100 text-xs sm:text-sm mt-1">選擇所需房間、時段與借用器材，系統將發送結構化確認郵件。</p>
         </div>
 
         <form id="bookingForm" onsubmit="handleFormSubmit(event)" class="p-6 sm:p-8 space-y-6">
@@ -120,7 +120,7 @@
             </div>
           </div>
 
-          <!-- 器材借用自訂與選擇 (NEW) -->
+          <!-- 器材借用自訂與選擇 -->
           <div class="p-4 rounded-xl bg-indigo-50/60 dark:bg-slate-900/60 border border-indigo-100 dark:border-indigo-900/40 space-y-4">
             <div class="flex items-center justify-between">
               <label class="block text-xs font-bold text-indigo-900 dark:text-indigo-300 uppercase tracking-wider">借用器材選擇 / Equipment Borrowing (可多選與自訂)</label>
@@ -137,9 +137,16 @@
             </div>
           </div>
 
+          <!-- 預約者資訊 & Google Account Auto-fill -->
           <div class="p-4 rounded-xl bg-blue-50/60 dark:bg-slate-900/50 border border-blue-100 dark:border-slate-700 space-y-4">
-            <h3 class="text-xs font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wider">預約者資訊 / Booker Details</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-xs font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wider">預約者資訊 / Booker Details</h3>
+              <button type="button" onclick="loginWithGoogle()" class="px-3 py-1 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 transition flex items-center space-x-1 shadow-sm">
+                <span>🌐 自動帶入 Google 電郵 / Login with Google</span>
+              </button>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">預約者名稱 / Booker Name *</label>
                 <input type="text" id="formBookerName" placeholder="例如：陳大文 (David Chan)" required class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm">
@@ -147,6 +154,10 @@
               <div>
                 <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">聯絡電話 / Contact Phone *</label>
                 <input type="tel" id="formPhone" placeholder="例如：98765432" required class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">電郵地址 (接收確認信) / Email *</label>
+                <input type="email" id="formEmail" placeholder="name@example.com" required class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm">
               </div>
             </div>
           </div>
@@ -384,7 +395,7 @@
 
   </main>
 
-  <!-- 編輯預訂行程 Modal (NEW) -->
+  <!-- 編輯預訂行程 Modal -->
   <div id="editBookingModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-xl border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto no-scrollbar">
       <div class="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700">
@@ -548,6 +559,23 @@
       setDashboardViewMode('day');
     });
 
+    function loginWithGoogle() {
+      showToast("⏳ 正在讀取 Google 帳號電郵...");
+      google.script.run
+        .withSuccessHandler(res => {
+          if (res && res.email) {
+            document.getElementById("formEmail").value = res.email;
+            showToast("✅ 已帶入 Google 電郵: " + res.email);
+          } else {
+            showToast("⚠️ 無法自動取得 Google 電郵，請手動填寫。", true);
+          }
+        })
+        .withFailureHandler(err => {
+          showToast("⚠️ 讀取失敗: " + err.message + "，請手動填寫。", true);
+        })
+        .getGoogleUser();
+    }
+
     function setTodayDates() {
       const today = new Date().toISOString().split("T")[0];
       document.getElementById("formDate").value = today;
@@ -664,6 +692,7 @@
         customEquipment: document.getElementById("formCustomEquipment").value.trim(),
         bookerName: document.getElementById("formBookerName").value.trim(),
         phone: document.getElementById("formPhone").value.trim(),
+        email: document.getElementById("formEmail").value.trim(),
         department: document.getElementById("formDepartment").value,
         activity: document.getElementById("formActivity").value.trim(),
         notes: document.getElementById("formNotes").value.trim()
