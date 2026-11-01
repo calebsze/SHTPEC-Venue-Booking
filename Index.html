@@ -93,7 +93,7 @@
       <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
         <div class="bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-blue-700 dark:to-indigo-900 px-6 py-6 text-white">
           <h2 class="text-xl font-bold">預約房間與器材表格 / Reservation Form</h2>
-          <p class="text-blue-100 text-xs sm:text-sm mt-1">選擇所需房間、時段與借用器材，系統將發送結構化確認郵件。</p>
+          <p class="text-blue-100 text-xs sm:text-sm mt-1">預設「團長、長執、傳道人、幹事」提交後自動即時確認，其他崗位需送社交審核。</p>
         </div>
 
         <form id="bookingForm" onsubmit="handleFormSubmit(event)" class="p-6 sm:p-8 space-y-6">
@@ -137,40 +137,63 @@
             </div>
           </div>
 
-          <!-- 預約者資訊 & Google Account Auto-fill -->
+          <!-- 預約負責人資訊 & 崗位選擇 -->
           <div class="p-4 rounded-xl bg-blue-50/60 dark:bg-slate-900/50 border border-blue-100 dark:border-slate-700 space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <h3 class="text-xs font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wider">預約者資訊 / Booker Details</h3>
+              <h3 class="text-xs font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wider">預約負責人資訊 / Booker Details</h3>
               <button type="button" onclick="loginWithGoogle()" class="px-3 py-1 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 transition flex items-center space-x-1 shadow-sm">
                 <span>🌐 自動帶入 Google 電郵 / Login with Google</span>
               </button>
             </div>
             
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">預約者名稱 / Booker Name *</label>
+                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">負責人姓名 / Booker Name *</label>
                 <input type="text" id="formBookerName" placeholder="例如：陳大文 (David Chan)" required class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">負責人崗位 / Position *</label>
+                <select id="formPosition" onchange="toggleCustomPositionInput()" required class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm">
+                  <!-- Rendered dynamically -->
+                </select>
+                <p id="positionNoticeText" class="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 font-medium">⚡ 團長/長執/傳道人/幹事：毋須批核，即時生效</p>
+              </div>
+            </div>
+
+            <!-- 當崗位選擇「其他」時觸發顯示 -->
+            <div id="customPositionGroup" class="hidden p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 space-y-1">
+              <label class="block text-xs font-bold text-amber-800 dark:text-amber-300">請輸入具體崗位名稱 / Custom Position Name *</label>
+              <input type="text" id="formCustomPosition" placeholder="例如：崇拜事奉人員、團契導師、外借團體代表" class="w-full px-3.5 py-2 bg-white dark:bg-slate-900 rounded-lg border border-amber-300 dark:border-amber-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 text-sm">
+              <p class="text-[11px] text-amber-700 dark:text-amber-400">⚠️ 注意：非預設崗位預約提交後需經管理員審核確認。</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">電郵地址 (接收結構化通知) / Email *</label>
+                <input type="email" id="formEmail" placeholder="name@example.com" required class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm">
               </div>
               <div>
                 <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">聯絡電話 / Contact Phone *</label>
                 <input type="tel" id="formPhone" placeholder="例如：98765432" required class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm">
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">電郵地址 (接收確認信) / Email *</label>
-                <input type="email" id="formEmail" placeholder="name@example.com" required class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm">
               </div>
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-2">部門 / Department</label>
-              <select id="formDepartment" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm"></select>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-2">部門 / Department *</label>
+              <select id="formDepartment" onchange="toggleCustomDepartmentInput()" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm"></select>
             </div>
             <div>
               <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-2">活動名稱 / Activity Name *</label>
               <input type="text" id="formActivity" placeholder="例如：週例會、團契活動" required class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm">
             </div>
+          </div>
+
+          <!-- 當部門選擇「其他」時觸發顯示 -->
+          <div id="customDepartmentGroup" class="hidden p-3 rounded-lg bg-indigo-50 dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 space-y-1">
+            <label class="block text-xs font-bold text-indigo-900 dark:text-indigo-300">請輸入具體部門名稱 / Custom Department Name *</label>
+            <input type="text" id="formCustomDepartment" placeholder="例如：音響小組、浸禮籌備會、外展事工" class="w-full px-3.5 py-2 bg-white dark:bg-slate-900 rounded-lg border border-indigo-300 dark:border-indigo-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 text-sm">
           </div>
 
           <div>
@@ -209,6 +232,12 @@
           </button>
         </div>
 
+        <!-- Status Legend Badges -->
+        <div class="flex items-center space-x-3 text-xs">
+          <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span><span class="text-slate-600 dark:text-slate-300">✅ 已確認批准</span></span>
+          <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span><span class="text-slate-600 dark:text-slate-300">⏳ 待管理員審核</span></span>
+        </div>
+
         <!-- Date Controls & Navigation -->
         <div class="flex flex-wrap items-center gap-3">
           <div class="flex items-center space-x-1">
@@ -229,7 +258,7 @@
       </div>
     </section>
 
-    <!-- TAB 3: 專業管理員專區 (RBAC) -->
+    <!-- TAB 3: 專業管理員專區 (RBAC & Approvals) -->
     <section id="adminTab" class="tab-content hidden space-y-6">
       <!-- 登入卡片 -->
       <div id="adminLoginCard" class="max-w-md mx-auto bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
@@ -238,7 +267,17 @@
             🔐
           </div>
           <h2 class="text-xl font-bold text-slate-900 dark:text-white">管理員登入 / Admin Sign In</h2>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">請輸入憑證存取系統後台 console</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">請選擇登入方式或輸入憑證存取系統審核 console</p>
+        </div>
+
+        <button type="button" onclick="handleAdminGoogleLogin()" class="w-full py-3 px-4 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-300 dark:border-slate-600 rounded-xl font-semibold text-slate-700 dark:text-slate-200 transition text-sm flex items-center justify-center space-x-2 shadow-sm">
+          <span>🌐 使用 Google 帳號登入 / Login with Google</span>
+        </button>
+
+        <div class="relative flex py-1 items-center">
+          <div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
+          <span class="flex-shrink mx-3 text-xs text-slate-400">或使用傳統帳號密碼登入</span>
+          <div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
         </div>
 
         <form onsubmit="handleAdminLogin(event)" class="space-y-4">
@@ -251,7 +290,7 @@
             <input type="password" id="adminPass" required class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm">
           </div>
           <button type="submit" id="adminLoginBtn" class="w-full py-3 bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white font-semibold rounded-xl transition text-sm">
-            登入管理後台 / Sign In
+            帳號密碼登入 / Sign In
           </button>
         </form>
       </div>
@@ -283,44 +322,50 @@
 
         <!-- 數據統計儀表板卡片 Summary Cards -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer hover:border-blue-500 transition" onclick="setAdminFilter('ALL')">
             <div class="text-xs font-medium text-slate-500 dark:text-slate-400">總預約數</div>
             <div id="statTotalBookings" class="text-2xl font-bold text-slate-900 dark:text-white mt-1">0</div>
           </div>
-          <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-            <div class="text-xs font-medium text-slate-500 dark:text-slate-400">今日預約</div>
-            <div id="statTodayBookings" class="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">0</div>
+          <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/30 dark:bg-amber-950/20 shadow-sm cursor-pointer hover:border-amber-500 transition" onclick="setAdminFilter('PENDING')">
+            <div class="text-xs font-medium text-amber-700 dark:text-amber-300">⏳ 待審核預約 (需批核)</div>
+            <div id="statPendingBookings" class="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">0</div>
           </div>
-          <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-            <div class="text-xs font-medium text-slate-500 dark:text-slate-400">本月預約</div>
-            <div id="statMonthBookings" class="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">0</div>
+          <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/30 dark:bg-emerald-950/20 shadow-sm cursor-pointer hover:border-emerald-500 transition" onclick="setAdminFilter('APPROVED')">
+            <div class="text-xs font-medium text-emerald-700 dark:text-emerald-300">✅ 已批准 / 即時生效</div>
+            <div id="statApprovedBookings" class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">0</div>
           </div>
-          <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-            <div class="text-xs font-medium text-slate-500 dark:text-slate-400">系統房間數</div>
-            <div id="statTotalRooms" class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">12</div>
+          <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/30 dark:bg-rose-950/20 shadow-sm cursor-pointer hover:border-rose-500 transition" onclick="setAdminFilter('REJECTED')">
+            <div class="text-xs font-medium text-rose-700 dark:text-rose-300">❌ 已拒絕預約</div>
+            <div id="statRejectedBookings" class="text-2xl font-bold text-rose-600 dark:text-rose-400 mt-1">0</div>
           </div>
         </div>
 
         <!-- 子頁籤導航 -->
         <div class="flex border-b border-slate-200 dark:border-slate-700 space-x-6 text-sm font-medium">
           <button onclick="switchAdminSubTab('subTabBookings')" id="nav-subTabBookings" class="py-2 border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 font-bold">
-            📅 行程與預約管理
+            📅 行程與審核管理
           </button>
           <button onclick="switchAdminSubTab('subTabUsers')" id="nav-subTabUsers" class="py-2 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
             👥 帳號權限管理 (超級管理員)
           </button>
         </div>
 
-        <!-- SUB-TAB 1: 行程與預約管理 -->
+        <!-- SUB-TAB 1: 行程與審核管理 -->
         <div id="subTabBookings" class="space-y-4">
           <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div class="flex items-center space-x-2 flex-1 w-full sm:w-auto">
               <span class="text-slate-400 text-sm">🔍</span>
-              <input type="text" id="adminSearch" oninput="filterAdminTable()" placeholder="搜尋活動、預約者、電話、器材或部門..." class="w-full bg-transparent outline-none text-sm text-slate-700 dark:text-slate-200">
+              <input type="text" id="adminSearch" oninput="filterAdminTable()" placeholder="搜尋活動、負責人、崗位、電話、狀態或部門..." class="w-full bg-transparent outline-none text-sm text-slate-700 dark:text-slate-200">
             </div>
-            <div class="flex items-center space-x-2 self-end sm:self-auto">
-              <button onclick="fetchAdminBookings()" class="px-3.5 py-2 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 rounded-lg text-xs font-semibold transition whitespace-nowrap">
-                🔄 刷新清單
+
+            <!-- Quick Filter Status Buttons -->
+            <div class="flex items-center space-x-1.5 self-end sm:self-auto text-xs">
+              <button onclick="setAdminFilter('ALL')" id="filterBtn-ALL" class="px-2.5 py-1 rounded-lg bg-blue-600 text-white font-semibold">全部</button>
+              <button onclick="setAdminFilter('PENDING')" id="filterBtn-PENDING" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium">⏳ 待審核</button>
+              <button onclick="setAdminFilter('APPROVED')" id="filterBtn-APPROVED" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium">✅ 已批准</button>
+              <button onclick="setAdminFilter('REJECTED')" id="filterBtn-REJECTED" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium">❌ 已拒絕</button>
+              <button onclick="fetchAdminBookings()" class="px-3 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 rounded-lg font-semibold transition whitespace-nowrap ml-2">
+                🔄 刷新
               </button>
             </div>
           </div>
@@ -329,12 +374,13 @@
             <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 text-sm text-left">
               <thead class="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 text-xs uppercase font-bold tracking-wider">
                 <tr>
+                  <th class="py-3 px-4">狀態</th>
                   <th class="py-3 px-4">日期 / 時段</th>
                   <th class="py-3 px-4">房間 / Rooms</th>
-                  <th class="py-3 px-4">預約者 / 電話</th>
+                  <th class="py-3 px-4">預約負責人 / 崗位 / 電話</th>
                   <th class="py-3 px-4">活動 / 部門</th>
-                  <th class="py-3 px-4">器材需求與備註</th>
-                  <th class="py-3 px-4 text-center">操作與管理</th>
+                  <th class="py-3 px-4">器材與備註</th>
+                  <th class="py-3 px-4 text-center">審核與操作</th>
                 </tr>
               </thead>
               <tbody id="adminTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/60"></tbody>
@@ -346,18 +392,22 @@
         <div id="subTabUsers" class="hidden space-y-6">
           <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
             <h3 class="text-md font-bold text-slate-900 dark:text-white">新增用戶帳號 / Create New User</h3>
-            <form onsubmit="handleCreateUser(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <form onsubmit="handleCreateUser(event)" class="grid grid-cols-1 sm:grid-cols-5 gap-4">
               <div>
                 <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">帳號 (Username) *</label>
                 <input type="text" id="newUsername" required placeholder="例如：john" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100">
               </div>
               <div>
-                <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">密碼 (Password) *</label>
-                <input type="password" id="newPassword" required placeholder="****" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100">
+                <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">密碼 (Password)</label>
+                <input type="password" id="newPassword" placeholder="若使用 Google 登入可留空" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100">
               </div>
               <div>
                 <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">顯示姓名 (Display Name) *</label>
                 <input type="text" id="newDisplayName" required placeholder="例如：John Doe" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">綁定 Google 電郵</label>
+                <input type="email" id="newGoogleEmail" placeholder="user@gmail.com" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100">
               </div>
               <div>
                 <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">指定角色 (Assign Role) *</label>
@@ -367,7 +417,7 @@
                   <option value="EDITOR">✏️ 行程編輯者 (Schedule Editor)</option>
                 </select>
               </div>
-              <div class="sm:col-span-4 flex justify-end">
+              <div class="sm:col-span-5 flex justify-end">
                 <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-xs shadow-sm">
                   ➕ 建立帳號
                 </button>
@@ -381,6 +431,7 @@
                 <tr>
                   <th class="py-3 px-4">帳號 (Username)</th>
                   <th class="py-3 px-4">顯示姓名 (Display Name)</th>
+                  <th class="py-3 px-4">綁定 Google 電郵</th>
                   <th class="py-3 px-4">角色權限 (Role)</th>
                   <th class="py-3 px-4 text-center">管理與操作</th>
                 </tr>
@@ -394,6 +445,29 @@
     </section>
 
   </main>
+
+  <!-- 拒絕預約原因 Modal -->
+  <div id="rejectModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-slate-200 dark:border-slate-700">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700">
+        <h3 class="text-lg font-bold text-rose-600 dark:text-rose-400">❌ 拒絕預約申請</h3>
+        <button onclick="closeRejectModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold">✕</button>
+      </div>
+
+      <form onsubmit="handleRejectSubmit(event)" class="space-y-4 text-sm">
+        <input type="hidden" id="rejectRowIndex">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">拒絕原因 / Rejection Reason *</label>
+          <textarea id="rejectReasonInput" rows="3" required placeholder="請輸入拒絕原因（此說明將隨電郵發送給預約申請人）..." class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-rose-500 text-sm"></textarea>
+        </div>
+
+        <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+          <button type="button" onclick="closeRejectModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold">取消</button>
+          <button type="submit" id="confirmRejectBtn" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold shadow-sm">確認拒絕並發送 Email</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- 編輯預訂行程 Modal -->
   <div id="editBookingModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -426,10 +500,14 @@
           <div id="editRoomContainer" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">預約者姓名 *</label>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">預約負責人姓名 *</label>
             <input type="text" id="editBookerName" required class="w-full px-3 py-2 border dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">崗位 *</label>
+            <select id="editPosition" required class="w-full px-3 py-2 border dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"></select>
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">聯絡電話 *</label>
@@ -443,7 +521,7 @@
             <select id="editDepartment" class="w-full px-3 py-2 border dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"></select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">活動名稱 *</label>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">活動名稱 *</label>
             <input type="text" id="editActivity" required class="w-full px-3 py-2 border dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
           </div>
         </div>
@@ -486,9 +564,12 @@
     let systemRooms = [];
     let systemEquipment = [];
     let systemDepartments = [];
+    let systemPositions = [];
+    let autoApprovePositions = [];
     let timeSlots = [];
     let currentAdminAuth = null;
     let allAdminRecords = [];
+    let currentAdminFilterStatus = 'ALL';
     let currentDashboardView = 'day';
 
     const ROLE_LABELS = {
@@ -608,6 +689,8 @@
           systemRooms = data.rooms;
           systemEquipment = data.equipment;
           systemDepartments = data.departments;
+          systemPositions = data.positions || [];
+          autoApprovePositions = data.autoApprovePositions || [];
 
           renderRoomCheckboxes(data.rooms);
           renderEquipmentCheckboxes(data.equipment);
@@ -620,8 +703,54 @@
             deptSelect.add(new Option(dept, dept));
             editDeptSelect.add(new Option(dept, dept));
           });
+          toggleCustomDepartmentInput();
+
+          const posSelect = document.getElementById("formPosition");
+          const editPosSelect = document.getElementById("editPosition");
+          posSelect.innerHTML = "";
+          editPosSelect.innerHTML = "";
+          systemPositions.forEach(pos => {
+            posSelect.add(new Option(pos, pos));
+            editPosSelect.add(new Option(pos, pos));
+          });
+          toggleCustomPositionInput();
         })
         .getSystemMeta();
+    }
+
+    function toggleCustomPositionInput() {
+      const posVal = document.getElementById("formPosition").value;
+      const group = document.getElementById("customPositionGroup");
+      const input = document.getElementById("formCustomPosition");
+      const notice = document.getElementById("positionNoticeText");
+
+      if (posVal.includes("其他") || posVal.includes("Other")) {
+        group.classList.remove("hidden");
+        input.required = true;
+        notice.textContent = "⚠️「其他」崗位提交後需由管理員審核批核";
+        notice.className = "text-[11px] text-amber-600 dark:text-amber-400 mt-1 font-medium";
+      } else {
+        group.classList.add("hidden");
+        input.required = false;
+        input.value = "";
+        notice.textContent = "⚡ 團長/長執/傳道人/幹事：毋須批核，即時生效";
+        notice.className = "text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 font-medium";
+      }
+    }
+
+    function toggleCustomDepartmentInput() {
+      const deptVal = document.getElementById("formDepartment").value;
+      const group = document.getElementById("customDepartmentGroup");
+      const input = document.getElementById("formCustomDepartment");
+
+      if (deptVal === "其他" || deptVal.includes("Other")) {
+        group.classList.remove("hidden");
+        input.required = true;
+      } else {
+        group.classList.add("hidden");
+        input.required = false;
+        input.value = "";
+      }
     }
 
     function renderRoomCheckboxes(rooms) {
@@ -667,6 +796,23 @@
     function handleFormSubmit(e) {
       e.preventDefault();
       const submitBtn = document.getElementById("submitBtn");
+
+      const posVal = document.getElementById("formPosition").value;
+      const customPosVal = document.getElementById("formCustomPosition").value.trim();
+      if ((posVal.includes("其他") || posVal.includes("Other")) && !customPosVal) {
+        showToast("⚠️ 崗位選擇「其他」時，必須輸入具體崗位名稱！", true);
+        document.getElementById("formCustomPosition").focus();
+        return;
+      }
+
+      const deptVal = document.getElementById("formDepartment").value;
+      const customDeptVal = document.getElementById("formCustomDepartment").value.trim();
+      if ((deptVal === "其他" || deptVal.includes("Other")) && !customDeptVal) {
+        showToast("⚠️ 部門選擇「其他」時，必須輸入具體部門名稱！", true);
+        document.getElementById("formCustomDepartment").focus();
+        return;
+      }
+
       submitBtn.disabled = true;
       submitBtn.innerHTML = "<span>⏳ 處理中...</span>";
 
@@ -691,9 +837,12 @@
         selectedEquipment: selectedEquipment,
         customEquipment: document.getElementById("formCustomEquipment").value.trim(),
         bookerName: document.getElementById("formBookerName").value.trim(),
+        position: posVal,
+        customPosition: customPosVal,
         phone: document.getElementById("formPhone").value.trim(),
         email: document.getElementById("formEmail").value.trim(),
-        department: document.getElementById("formDepartment").value,
+        department: deptVal,
+        customDepartment: customDeptVal,
         activity: document.getElementById("formActivity").value.trim(),
         notes: document.getElementById("formNotes").value.trim()
       };
@@ -707,6 +856,8 @@
             showToast("✅ " + res.message);
             document.getElementById("bookingForm").reset();
             setTodayDates();
+            toggleCustomPositionInput();
+            toggleCustomDepartmentInput();
             switchTab("dashboardTab");
           } else {
             showToast("⚠️ " + res.message, true);
@@ -828,11 +979,15 @@
           const matched = bookings.find(b => b.bookedRooms.includes(r) && b.startTime <= slotStart && b.endTime >= slotEnd);
 
           if (matched) {
+            const isPending = matched.status === "PENDING" || matched.status === "待審核";
+            const bgClass = isPending ? "bg-amber-500 dark:bg-amber-600" : "bg-blue-600 dark:bg-blue-600";
+            const tagLabel = isPending ? " [⏳ 待審核]" : "";
+
             html += `
               <td class="p-1.5 text-center border-r border-slate-100 dark:border-slate-700">
-                <div class="bg-blue-600 dark:bg-blue-600 text-white rounded-lg p-1.5 text-[11px] font-medium shadow-sm leading-tight">
-                  <div class="font-bold truncate">${escapeHtml(matched.activity)}</div>
-                  <div class="text-[10px] text-blue-100 truncate">${escapeHtml(matched.department)} | ${escapeHtml(matched.bookerName)}</div>
+                <div class="${bgClass} text-white rounded-lg p-1.5 text-[11px] font-medium shadow-sm leading-tight">
+                  <div class="font-bold truncate">${escapeHtml(matched.activity)}${tagLabel}</div>
+                  <div class="text-[10px] opacity-90 truncate">${escapeHtml(matched.department)} | ${escapeHtml(matched.bookerName)}</div>
                 </div>
               </td>
             `;
@@ -882,12 +1037,19 @@
           html += `<div class="text-center py-6 text-xs text-slate-400">無預約</div>`;
         } else {
           dayBookings.forEach(b => {
+            const isPending = b.status === "PENDING" || b.status === "待審核";
+            const badgeClass = isPending ? "bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200" : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+
             html += `
               <div class="p-2 bg-blue-50 dark:bg-slate-900/80 border border-blue-200 dark:border-blue-900 rounded-xl text-xs space-y-1">
-                <div class="font-bold text-blue-900 dark:text-blue-300 truncate">${escapeHtml(b.activity)}</div>
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-blue-900 dark:text-blue-300 truncate">${escapeHtml(b.activity)}</span>
+                  ${isPending ? '<span class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-amber-200 text-amber-900">⏳ 待審</span>' : ''}
+                </div>
                 <div class="text-[11px] text-slate-600 dark:text-slate-400">🕒 ${b.startTime} - ${b.endTime}</div>
+                <div class="text-[10px] text-slate-500 truncate">👤 ${escapeHtml(b.bookerName)} (${escapeHtml(b.position || "-")})</div>
                 <div class="flex flex-wrap gap-1 pt-1">
-                  ${b.bookedRooms.map(r => `<span class="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-[10px]">${escapeHtml(r)}</span>`).join('')}
+                  ${b.bookedRooms.map(r => `<span class="px-1.5 py-0.5 ${badgeClass} rounded text-[10px]">${escapeHtml(r)}</span>`).join('')}
                 </div>
               </div>
             `;
@@ -934,8 +1096,11 @@
         `;
 
         dayBookings.forEach(b => {
+          const isPending = b.status === "PENDING" || b.status === "待審核";
+          const bgStyle = isPending ? "bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200" : "bg-blue-100 text-blue-900 dark:bg-blue-900/60 dark:text-blue-200";
+
           html += `
-            <div class="bg-blue-100 dark:bg-blue-900/60 text-blue-900 dark:text-blue-200 text-[10px] px-1.5 py-0.5 rounded truncate font-medium" title="${escapeHtml(b.activity)} (${b.startTime}-${b.endTime})">
+            <div class="${bgStyle} text-[10px] px-1.5 py-0.5 rounded truncate font-medium" title="${escapeHtml(b.activity)} (${b.startTime}-${b.endTime})">
               ${b.startTime} ${escapeHtml(b.activity)}
             </div>
           `;
@@ -960,15 +1125,18 @@
 
       let html = `<div class="divide-y divide-slate-200 dark:divide-slate-700">`;
       bookings.forEach(b => {
+        const isPending = b.status === "PENDING" || b.status === "待審核";
+
         html += `
           <div class="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-750 transition">
             <div class="space-y-1">
               <div class="flex items-center space-x-2">
                 <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">${b.date}</span>
                 <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">🕒 ${b.startTime} - ${b.endTime}</span>
+                ${isPending ? '<span class="px-2 py-0.5 text-xs font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-300">⏳ 待管理員審核</span>' : '<span class="px-2 py-0.5 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">✅ 已確認</span>'}
               </div>
               <h4 class="text-sm font-bold text-slate-900 dark:text-white">${escapeHtml(b.activity)}</h4>
-              <p class="text-xs text-slate-500 dark:text-slate-400">部門: ${escapeHtml(b.department)} | 預約人: ${escapeHtml(b.bookerName)} (${escapeHtml(b.phone)})</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">部門: ${escapeHtml(b.department)} | 負責人: ${escapeHtml(b.bookerName)} (${escapeHtml(b.position || "-")}) 📞 ${escapeHtml(b.phone)}</p>
               ${b.notes ? `<p class="text-xs text-indigo-600 dark:text-indigo-400 font-medium">📋 ${escapeHtml(b.notes)}</p>` : ''}
             </div>
             <div class="flex flex-wrap gap-1">
@@ -994,7 +1162,7 @@
       google.script.run
         .withSuccessHandler(res => {
           btn.disabled = false;
-          btn.textContent = "登入管理後台 / Sign In";
+          btn.textContent = "帳號密碼登入 / Sign In";
           if (res.success) {
             currentAdminAuth = { u, p, displayName: res.user.displayName, role: res.user.role };
             
@@ -1020,10 +1188,43 @@
         })
         .withFailureHandler(err => {
           btn.disabled = false;
-          btn.textContent = "登入管理後台 / Sign In";
+          btn.textContent = "帳號密碼登入 / Sign In";
           showToast("❌ 驗證失敗: " + err.message, true);
         })
         .verifyUser(u, p);
+    }
+
+    function handleAdminGoogleLogin() {
+      showToast("⏳ 正在驗證 Google 帳號...");
+      google.script.run
+        .withSuccessHandler(res => {
+          if (res.success) {
+            currentAdminAuth = { u: res.user.username, p: res.authKey, displayName: res.user.displayName, role: res.user.role };
+            
+            document.getElementById("adminLoginCard").classList.add("hidden");
+            document.getElementById("adminPanelArea").classList.remove("hidden");
+            
+            document.getElementById("userInfoText").textContent = `已登入: ${res.user.displayName} (${res.user.username})`;
+            document.getElementById("userRoleBadge").textContent = ROLE_LABELS[res.user.role] || res.user.role;
+
+            const usersNavBtn = document.getElementById("nav-subTabUsers");
+            if (res.user.role === "SUPER_ADMIN") {
+              usersNavBtn.classList.remove("hidden");
+            } else {
+              usersNavBtn.classList.add("hidden");
+            }
+
+            switchAdminSubTab('subTabBookings');
+            fetchAdminBookings();
+            showToast(`🔑 Google 驗證成功，歡迎 ${res.user.displayName}`);
+          } else {
+            showToast("❌ " + res.message, true);
+          }
+        })
+        .withFailureHandler(err => {
+          showToast("❌ Google 登入失敗: " + err.message, true);
+        })
+        .verifyGoogleUser();
     }
 
     function adminLogout() {
@@ -1054,28 +1255,62 @@
     function fetchAdminBookings() {
       if (!currentAdminAuth) return;
       const tbody = document.getElementById("adminTableBody");
-      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">正在讀取預約資料庫...</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400">正在讀取預約資料庫...</td></tr>`;
 
       google.script.run
         .withSuccessHandler(list => {
           allAdminRecords = list;
           updateAdminStats(list);
-          renderAdminTable(list);
+          filterAdminTable();
         })
         .withFailureHandler(err => {
-          tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-rose-500">載入失敗: ${err.message}</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-rose-500">載入失敗: ${err.message}</td></tr>`;
         })
         .getAdminBookings(currentAdminAuth.u, currentAdminAuth.p);
     }
 
-    function updateAdminStats(records) {
-      const todayStr = new Date().toISOString().split("T")[0];
-      const thisMonthPrefix = todayStr.substring(0, 7);
+    function setAdminFilter(status) {
+      currentAdminFilterStatus = status;
+      ['ALL', 'PENDING', 'APPROVED', 'REJECTED'].forEach(s => {
+        const btn = document.getElementById('filterBtn-' + s);
+        if (s === status) {
+          btn.className = "px-2.5 py-1 rounded-lg bg-blue-600 text-white font-bold shadow-sm";
+        } else {
+          btn.className = "px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-200";
+        }
+      });
+      filterAdminTable();
+    }
 
+    function updateAdminStats(records) {
       document.getElementById("statTotalBookings").textContent = records.length;
-      document.getElementById("statTodayBookings").textContent = records.filter(r => r.date === todayStr).length;
-      document.getElementById("statMonthBookings").textContent = records.filter(r => r.date && r.date.startsWith(thisMonthPrefix)).length;
-      document.getElementById("statTotalRooms").textContent = systemRooms.length || 12;
+      document.getElementById("statPendingBookings").textContent = records.filter(r => r.status === "PENDING" || r.status === "待審核").length;
+      document.getElementById("statApprovedBookings").textContent = records.filter(r => r.status === "APPROVED" || r.status === "已批准").length;
+      document.getElementById("statRejectedBookings").textContent = records.filter(r => r.status === "REJECTED" || r.status === "已拒絕").length;
+    }
+
+    function filterAdminTable() {
+      const q = document.getElementById("adminSearch").value.toLowerCase();
+      const filtered = allAdminRecords.filter(r => {
+        const matchesStatus = currentAdminFilterStatus === 'ALL' ||
+          (currentAdminFilterStatus === 'PENDING' && (r.status === "PENDING" || r.status === "待審核")) ||
+          (currentAdminFilterStatus === 'APPROVED' && (r.status === "APPROVED" || r.status === "已批准")) ||
+          (currentAdminFilterStatus === 'REJECTED' && (r.status === "REJECTED" || r.status === "已拒絕"));
+
+        const matchesQuery = !q ||
+          (r.activity && r.activity.toLowerCase().includes(q)) ||
+          (r.bookerName && r.bookerName.toLowerCase().includes(q)) ||
+          (r.position && r.position.toLowerCase().includes(q)) ||
+          (r.phone && r.phone.toLowerCase().includes(q)) ||
+          (r.department && r.department.toLowerCase().includes(q)) ||
+          (r.date && r.date.toLowerCase().includes(q)) ||
+          (r.status && r.status.toLowerCase().includes(q)) ||
+          (r.notes && r.notes.toLowerCase().includes(q));
+
+        return matchesStatus && matchesQuery;
+      });
+
+      renderAdminTable(filtered);
     }
 
     function renderAdminTable(records) {
@@ -1083,7 +1318,7 @@
       tbody.innerHTML = "";
 
       if (records.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">目前尚無任何預約紀錄。</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400">目前尚無符合條件的預約紀錄。</td></tr>`;
         return;
       }
 
@@ -1091,7 +1326,19 @@
         const tr = document.createElement("tr");
         tr.className = "hover:bg-slate-50 dark:hover:bg-slate-750 transition";
 
+        let statusBadge = "";
+        if (r.status === "PENDING" || r.status === "待審核") {
+          statusBadge = `<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700">⏳ 待審核</span>`;
+        } else if (r.status === "APPROVED" || r.status === "已批准") {
+          statusBadge = `<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">✅ 已批准</span>`;
+        } else if (r.status === "REJECTED" || r.status === "已拒絕") {
+          statusBadge = `<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-700" title="拒絕原因: ${escapeHtml(r.rejectReason)}">❌ 已拒絕</span>`;
+        }
+
+        let rejectNoteHtml = r.rejectReason ? `<div class="text-[11px] text-rose-600 dark:text-rose-400 font-semibold mt-1">理由: ${escapeHtml(r.rejectReason)}</div>` : "";
+
         tr.innerHTML = `
+          <td class="py-3 px-4 whitespace-nowrap">${statusBadge}</td>
           <td class="py-3 px-4 whitespace-nowrap">
             <div class="font-bold text-slate-900 dark:text-slate-100">${r.date}</div>
             <div class="text-xs text-slate-500 dark:text-slate-400">${r.startTime} - ${r.endTime}</div>
@@ -1102,7 +1349,8 @@
             </div>
           </td>
           <td class="py-3 px-4 whitespace-nowrap">
-            <div class="font-medium text-slate-800 dark:text-slate-200">${escapeHtml(r.bookerName)}</div>
+            <div class="font-bold text-slate-800 dark:text-slate-200">${escapeHtml(r.bookerName)}</div>
+            <div class="text-xs text-indigo-600 dark:text-indigo-400 font-medium">${escapeHtml(r.position || "-")}</div>
             <div class="text-xs text-slate-500 dark:text-slate-400">📞 ${escapeHtml(r.phone)}</div>
           </td>
           <td class="py-3 px-4">
@@ -1111,31 +1359,85 @@
           </td>
           <td class="py-3 px-4 text-xs text-slate-600 dark:text-slate-300 max-w-xs leading-normal">
             ${escapeHtml(r.notes || "-")}
+            ${rejectNoteHtml}
           </td>
-          <td class="py-3 px-4 text-center whitespace-nowrap space-x-1.5">
-            <button onclick="openEditBookingModal(${r.rowIndex})" class="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 rounded-lg text-xs font-semibold transition">
-              編輯
-            </button>
-            <button onclick="confirmDeleteBooking(${r.rowIndex})" class="px-2.5 py-1 bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 rounded-lg text-xs font-semibold transition">
-              刪除
-            </button>
+          <td class="py-3 px-4 text-center whitespace-nowrap space-x-1">
+            <button onclick="handleApproveBooking(${r.rowIndex})" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold transition" title="批准預約">批准</button>
+            <button onclick="openRejectModal(${r.rowIndex})" class="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-xs font-semibold transition" title="拒絕預約">拒絕</button>
+            <button onclick="openEditBookingModal(${r.rowIndex})" class="px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 rounded text-xs font-semibold transition">編輯</button>
+            <button onclick="confirmDeleteBooking(${r.rowIndex})" class="px-2 py-1 bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 rounded text-xs font-semibold transition">刪除</button>
           </td>
         `;
         tbody.appendChild(tr);
       });
     }
 
-    function filterAdminTable() {
-      const q = document.getElementById("adminSearch").value.toLowerCase();
-      const filtered = allAdminRecords.filter(r => 
-        (r.activity && r.activity.toLowerCase().includes(q)) ||
-        (r.bookerName && r.bookerName.toLowerCase().includes(q)) ||
-        (r.phone && r.phone.toLowerCase().includes(q)) ||
-        (r.department && r.department.toLowerCase().includes(q)) ||
-        (r.date && r.date.toLowerCase().includes(q)) ||
-        (r.notes && r.notes.toLowerCase().includes(q))
-      );
-      renderAdminTable(filtered);
+    function handleApproveBooking(rowIndex) {
+      if (!currentAdminAuth) return;
+      if (!confirm("確定要批准此筆預約申請嗎？系統將自動發送批准確認電郵。")) return;
+
+      showToast("⏳ 正在批准預約並發送電郵...");
+      google.script.run
+        .withSuccessHandler(res => {
+          if (res.success) {
+            showToast("✅ " + res.message);
+            fetchAdminBookings();
+            loadScheduleDashboard();
+          } else {
+            showToast("⚠️ " + res.message, true);
+          }
+        })
+        .withFailureHandler(err => {
+          showToast("❌ 錯誤: " + err.message, true);
+        })
+        .approveBooking(currentAdminAuth.u, currentAdminAuth.p, rowIndex);
+    }
+
+    function openRejectModal(rowIndex) {
+      document.getElementById("rejectRowIndex").value = rowIndex;
+      document.getElementById("rejectReasonInput").value = "";
+      document.getElementById("rejectModal").classList.remove("hidden");
+    }
+
+    function closeRejectModal() {
+      document.getElementById("rejectModal").classList.add("hidden");
+    }
+
+    function handleRejectSubmit(e) {
+      e.preventDefault();
+      if (!currentAdminAuth) return;
+
+      const rowIndex = parseInt(document.getElementById("rejectRowIndex").value, 10);
+      const reason = document.getElementById("rejectReasonInput").value.trim();
+
+      if (!reason) {
+        showToast("⚠️ 請輸入拒絕原因！", true);
+        return;
+      }
+
+      const btn = document.getElementById("confirmRejectBtn");
+      btn.disabled = true;
+      btn.textContent = "處理中...";
+
+      google.script.run
+        .withSuccessHandler(res => {
+          btn.disabled = false;
+          btn.textContent = "確認拒絕並發送 Email";
+          if (res.success) {
+            showToast("❌ " + res.message);
+            closeRejectModal();
+            fetchAdminBookings();
+            loadScheduleDashboard();
+          } else {
+            showToast("⚠️ " + res.message, true);
+          }
+        })
+        .withFailureHandler(err => {
+          btn.disabled = false;
+          btn.textContent = "確認拒絕並發送 Email";
+          showToast("❌ 錯誤: " + err.message, true);
+        })
+        .rejectBooking(currentAdminAuth.u, currentAdminAuth.p, rowIndex, reason);
     }
 
     function openEditBookingModal(rowIndex) {
@@ -1147,6 +1449,7 @@
       document.getElementById("editStartTime").value = rec.startTime;
       document.getElementById("editEndTime").value = rec.endTime;
       document.getElementById("editBookerName").value = rec.bookerName;
+      document.getElementById("editPosition").value = rec.position || systemPositions[0] || "";
       document.getElementById("editPhone").value = rec.phone;
       document.getElementById("editDepartment").value = rec.department;
       document.getElementById("editActivity").value = rec.activity;
@@ -1195,6 +1498,7 @@
         endTime: document.getElementById("editEndTime").value,
         selectedRooms: selectedRooms,
         bookerName: document.getElementById("editBookerName").value.trim(),
+        position: document.getElementById("editPosition").value,
         phone: document.getElementById("editPhone").value.trim(),
         department: document.getElementById("editDepartment").value,
         activity: document.getElementById("editActivity").value.trim(),
@@ -1247,14 +1551,16 @@
         return;
       }
 
-      let csv = "\uFEFFDate,Start Time,End Time,Rooms,Booker,Phone,Department,Activity,Notes\n";
+      let csv = "\uFEFFStatus,Date,Start Time,End Time,Rooms,Booker,Position,Phone,Department,Activity,Notes,Reject Reason\n";
       allAdminRecords.forEach(r => {
         const roomsStr = `"${r.bookedRooms.join("; ")}"`;
         const notesStr = `"${(r.notes || "").replace(/"/g, '""')}"`;
         const actStr = `"${(r.activity || "").replace(/"/g, '""')}"`;
         const nameStr = `"${(r.bookerName || "").replace(/"/g, '""')}"`;
+        const posStr = `"${(r.position || "").replace(/"/g, '""')}"`;
+        const reasonStr = `"${(r.rejectReason || "").replace(/"/g, '""')}"`;
         
-        csv += `${r.date},${r.startTime},${r.endTime},${roomsStr},${nameStr},${r.phone},${r.department},${actStr},${notesStr}\n`;
+        csv += `${r.status},${r.date},${r.startTime},${r.endTime},${roomsStr},${nameStr},${posStr},${r.phone},${r.department},${actStr},${notesStr},${reasonStr}\n`;
       });
 
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1273,14 +1579,14 @@
     function fetchUsersList() {
       if (!currentAdminAuth || currentAdminAuth.role !== "SUPER_ADMIN") return;
       const tbody = document.getElementById("usersTableBody");
-      tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-slate-400">載入用戶清單中...</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-slate-400">載入用戶清單中...</td></tr>`;
 
       google.script.run
         .withSuccessHandler(users => {
           renderUsersTable(users);
         })
         .withFailureHandler(err => {
-          tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-rose-500">無法讀取用戶資料: ${err.message}</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-rose-500">無法讀取用戶資料: ${err.message}</td></tr>`;
         })
         .getUsersList(currentAdminAuth.u, currentAdminAuth.p);
     }
@@ -1295,13 +1601,14 @@
         tr.innerHTML = `
           <td class="py-3 px-4 font-mono font-bold text-slate-800 dark:text-slate-200">${escapeHtml(u.username)}</td>
           <td class="py-3 px-4 dark:text-slate-300">${escapeHtml(u.displayName)}</td>
+          <td class="py-3 px-4 text-xs font-mono text-slate-600 dark:text-slate-400">${escapeHtml(u.googleEmail || "-")}</td>
           <td class="py-3 px-4">
             <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
               ${ROLE_LABELS[u.role] || u.role}
             </span>
           </td>
           <td class="py-3 px-4 text-center whitespace-nowrap space-x-2">
-            <button onclick="editUserPrompt('${escapeHtml(u.username)}', '${escapeHtml(u.displayName)}', '${u.role}')" class="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 rounded-md text-xs font-medium">編輯權限與資料</button>
+            <button onclick="editUserPrompt('${escapeHtml(u.username)}', '${escapeHtml(u.displayName)}', '${u.role}', '${escapeHtml(u.googleEmail || "")}')" class="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 rounded-md text-xs font-medium">編輯權限與資料</button>
             <button onclick="deleteUserPrompt('${escapeHtml(u.username)}')" class="px-2.5 py-1 bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 rounded-md text-xs font-medium">刪除</button>
           </td>
         `;
@@ -1317,6 +1624,7 @@
         username: document.getElementById("newUsername").value.trim(),
         password: document.getElementById("newPassword").value.trim(),
         displayName: document.getElementById("newDisplayName").value.trim(),
+        googleEmail: document.getElementById("newGoogleEmail").value.trim(),
         role: document.getElementById("newRole").value
       };
 
@@ -1327,6 +1635,7 @@
             document.getElementById("newUsername").value = "";
             document.getElementById("newPassword").value = "";
             document.getElementById("newDisplayName").value = "";
+            document.getElementById("newGoogleEmail").value = "";
             fetchUsersList();
           } else {
             showToast("⚠️ " + res.message, true);
@@ -1338,18 +1647,22 @@
         .createUser(currentAdminAuth.u, currentAdminAuth.p, newUser);
     }
 
-    function editUserPrompt(username, currentName, currentRole) {
+    function editUserPrompt(username, currentName, currentRole, currentGoogleEmail) {
       const newName = prompt(`修改用戶 [${username}] 的顯示姓名：`, currentName);
       if (newName === null) return;
 
       const newRole = prompt(`修改角色權限 (輸入 SUPER_ADMIN / ADMIN / EDITOR)：`, currentRole);
       if (newRole === null) return;
 
+      const newGoogle = prompt(`綁定或修改 Google 電郵 (可留空)：`, currentGoogleEmail);
+      if (newGoogle === null) return;
+
       const resetPass = prompt(`重設密碼 (若不需重設請留空)：`, "");
 
       const updatePayload = {
         displayName: newName.trim(),
         role: newRole.trim(),
+        googleEmail: newGoogle.trim(),
         newPassword: resetPass ? resetPass.trim() : ""
       };
 
